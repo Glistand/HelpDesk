@@ -105,3 +105,5 @@ go.work.sum
 .env
 
 .idea
+
+graphify-out
