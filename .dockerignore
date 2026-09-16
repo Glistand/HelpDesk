@@ -1,0 +1,9 @@
+.git
+.idea
+apps/web/node_modules
+apps/web/.next
+graphify-out
+bin
+.env
+**/.idea
+**/node_modules

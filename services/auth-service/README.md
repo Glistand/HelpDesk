@@ -1,5 +1,11 @@
 # auth-service
 
-Пользователи, роли, JWT. Exposes gRPC.
+JWT login / validate. Exposes gRPC on `:50051`.
 
-Часть monorepo [HelpDesk](https://github.com/Glistand/HelpDesk).
+Dev seed:
+- `agent@helpdesk.local` / `password` (agent)
+- `admin@helpdesk.local` / `password` (admin)
+
+```bash
+JWT_SECRET=helpdesk-dev-secret-change-me go run ./cmd/auth-service
+```

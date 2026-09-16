@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package helpdesk.auth.v1;
+
+option go_package = "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/auth/v1;authv1";
+
+// AuthService issues and validates JWTs for agents/users.
+service AuthService {
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+}
+
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  ROLE_AGENT = 1;
+  ROLE_ADMIN = 2;
+  ROLE_REQUESTER = 3;
+}
+
+message User {
+  string id = 1;
+  string email = 2;
+  string name = 3;
+  Role role = 4;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string access_token = 1;
+  User user = 2;
+  int64 expires_at_unix = 3;
+}
+
+message ValidateTokenRequest {
+  string access_token = 1;
+}
+
+message ValidateTokenResponse {
+  bool valid = 1;
+  User user = 2;
+}
+
+message GetUserRequest {
+  string id = 1;
+}
+
+message GetUserResponse {
+  User user = 1;
+}

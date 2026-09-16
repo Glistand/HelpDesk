@@ -119,6 +119,9 @@ make up
 | NATS | 4222 | клиентский порт |
 | NATS monitor | 8222 | health / metrics |
 | Meilisearch | 7700 | поиск *(после MVP)* |
+| `auth-service` | 50051 | gRPC JWT |
+| `ticket-service` | 50052 | gRPC tickets + outbox → NATS |
+| `api-gateway` | 8080 | HTTP → gRPC |
 
 JetStream streams создаются автоматически контейнером `nats-init`:
 
@@ -130,7 +133,17 @@ JetStream streams создаются автоматически контейне
 ```bash
 make ps
 curl http://localhost:8222/healthz
-curl http://localhost:7700/health
+curl http://localhost:8080/healthz
+
+# login (seed: agent@helpdesk.local / password)
+TOKEN=$(curl -s -X POST http://localhost:8080/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"agent@helpdesk.local","password":"password"}' | jq -r .access_token)
+
+curl -s -X POST http://localhost:8080/tickets \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"title":"VPN down","description":"Cannot connect","priority":"high","category":"Network"}'
 ```
 
 Остановка:
@@ -140,44 +153,33 @@ make down      # сохранить данные
 make reset     # удалить volumes
 ```
 
-## Go monorepo (Фаза 0)
+## Go monorepo
 
-Workspace: [`go.work`](go.work) включает `api/gen/go`, `libs/eventkit`, `libs/grpckit`, `services/ticket-service`.
+Workspace: [`go.work`](go.work) включает libs, codegen и сервисы Фазы 1.
 
 | Пакет | Назначение |
 |-------|------------|
 | [`api/proto`](api/proto) | `.proto` + `buf` codegen → [`api/gen/go`](api/gen/go) |
 | [`libs/grpckit`](libs/grpckit) | gRPC interceptors, metadata, errors |
 | [`libs/eventkit`](libs/eventkit) | NATS JetStream envelope / publish / subscribe |
+| [`services/auth-service`](services/auth-service) | Login / ValidateToken (JWT) |
+| [`services/ticket-service`](services/ticket-service) | CRUD + transactional outbox |
+| [`services/api-gateway`](services/api-gateway) | HTTP BFF |
 
 ```bash
-# regenerate stubs (needs buf + protoc-gen-go + protoc-gen-go-grpc)
 make proto
-
-# build shared libraries + generated stubs
-make build-libs
-
-# unit tests
+make build-services
 make test-go
 ```
 
-Import paths:
-
-```go
-import (
-    ticketv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/ticket/v1"
-    "github.com/Glistand/HelpDesk/libs/eventkit/natsx"
-    "github.com/Glistand/HelpDesk/libs/eventkit/subjects"
-    "github.com/Glistand/HelpDesk/libs/grpckit"
-)
-```
+Dev seed user: `agent@helpdesk.local` / `password`.
 
 ## Roadmap
 
 | Фаза | Что делаем |
 |------|------------|
 | 0 | Compose; `api/proto`; общий Go-каркас (`grpckit`, `eventkit`) — **done** |
-| 1 | `ticket-service` (gRPC) + outbox + gateway (HTTP→gRPC) + auth |
+| 1 | `ticket-service` (gRPC) + outbox + gateway (HTTP→gRPC) + auth — **done** |
 | 2 | assignment, notification, audit |
 | 3 | SLA + escalation + DLQ (`helpdesk.dlq.>`) |
 | 4 | search + BFF aggregation по gRPC |

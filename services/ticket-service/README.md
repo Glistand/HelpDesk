@@ -1,5 +1,9 @@
 # ticket-service
 
-CRUD тикетов, статусы, transactional outbox → NATS JetStream.
+CRUD тикетов, transactional outbox → NATS JetStream. Exposes gRPC on `:50052`.
 
-Часть monorepo [HelpDesk](https://github.com/Glistand/HelpDesk).
+```bash
+TICKET_DATABASE_URL=postgres://helpdesk:helpdesk@localhost:5432/ticket?sslmode=disable \
+NATS_URL=nats://localhost:4222 \
+go run ./cmd/ticket-service
+```

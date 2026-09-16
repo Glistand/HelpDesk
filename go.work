@@ -4,5 +4,7 @@ use (
 	./api/gen/go
 	./libs/eventkit
 	./libs/grpckit
+	./services/api-gateway
+	./services/auth-service
 	./services/ticket-service
 )
