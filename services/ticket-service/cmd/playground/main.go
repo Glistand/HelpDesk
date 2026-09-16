@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"ticket-service/internal/store"
+	"github.com/Glistand/HelpDesk/services/ticket-service/internal/store"
 )
 
 func main() {

@@ -1,4 +1,4 @@
-.PHONY: up down logs ps reset nats-streams env web web-build
+.PHONY: up down logs ps reset nats-streams env web web-build proto build-libs test-go
 
 COMPOSE_FILE := deploy/compose/docker-compose.yml
 ENV_FILE := .env
@@ -31,3 +31,16 @@ web:
 
 web-build:
 	cd apps/web && npm run build
+
+proto:
+	cd api/proto && buf generate
+
+build-libs:
+	go build github.com/Glistand/HelpDesk/libs/eventkit/... \
+		github.com/Glistand/HelpDesk/libs/grpckit/... \
+		github.com/Glistand/HelpDesk/api/gen/go/...
+
+test-go:
+	go test github.com/Glistand/HelpDesk/libs/eventkit/... \
+		github.com/Glistand/HelpDesk/libs/grpckit/... \
+		github.com/Glistand/HelpDesk/services/ticket-service/...

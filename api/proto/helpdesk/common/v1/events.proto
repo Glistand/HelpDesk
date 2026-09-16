@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package helpdesk.common.v1;
+
+option go_package = "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/common/v1;commonv1";
+
+// Envelope wraps every async domain event published to NATS JetStream.
+message EventEnvelope {
+  // Unique event id (UUID). Used for consumer idempotency and NATS Msg-Id.
+  string event_id = 1;
+  // Correlates a request/command chain across gRPC and NATS.
+  string correlation_id = 2;
+  // RFC3339 UTC timestamp when the event occurred.
+  string occurred_at = 3;
+  // Domain event type, e.g. "ticket.created".
+  string type = 4;
+  // Aggregate id used for ordering (ticket_id).
+  string aggregate_id = 5;
+  // Opaque JSON payload for the specific event type.
+  bytes payload = 6;
+}

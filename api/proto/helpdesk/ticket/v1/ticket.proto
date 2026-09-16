@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+package helpdesk.ticket.v1;
+
+option go_package = "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/ticket/v1;ticketv1";
+
+// TicketService is the sync API for ticket CRUD and status changes.
+service TicketService {
+  rpc CreateTicket(CreateTicketRequest) returns (CreateTicketResponse);
+  rpc GetTicket(GetTicketRequest) returns (GetTicketResponse);
+  rpc ListTickets(ListTicketsRequest) returns (ListTicketsResponse);
+  rpc UpdateTicketStatus(UpdateTicketStatusRequest) returns (UpdateTicketStatusResponse);
+}
+
+enum TicketStatus {
+  TICKET_STATUS_UNSPECIFIED = 0;
+  TICKET_STATUS_NEW = 1;
+  TICKET_STATUS_OPEN = 2;
+  TICKET_STATUS_PENDING = 3;
+  TICKET_STATUS_RESOLVED = 4;
+  TICKET_STATUS_CLOSED = 5;
+}
+
+enum TicketPriority {
+  TICKET_PRIORITY_UNSPECIFIED = 0;
+  TICKET_PRIORITY_LOW = 1;
+  TICKET_PRIORITY_NORMAL = 2;
+  TICKET_PRIORITY_HIGH = 3;
+  TICKET_PRIORITY_URGENT = 4;
+}
+
+message Ticket {
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  TicketStatus status = 4;
+  TicketPriority priority = 5;
+  string category = 6;
+  string requester = 7;
+  string assignee_id = 8;
+  string created_at = 9;
+  string updated_at = 10;
+}
+
+message CreateTicketRequest {
+  string title = 1;
+  string description = 2;
+  TicketPriority priority = 3;
+  string category = 4;
+  string requester = 5;
+}
+
+message CreateTicketResponse {
+  Ticket ticket = 1;
+}
+
+message GetTicketRequest {
+  string id = 1;
+}
+
+message GetTicketResponse {
+  Ticket ticket = 1;
+}
+
+message ListTicketsRequest {
+  // Optional status filter. UNSPECIFIED means all open-like statuses.
+  TicketStatus status = 1;
+  // Optional assignee filter.
+  string assignee_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+
+message ListTicketsResponse {
+  repeated Ticket tickets = 1;
+  string next_page_token = 2;
+}
+
+message UpdateTicketStatusRequest {
+  string id = 1;
+  TicketStatus status = 2;
+}
+
+message UpdateTicketStatusResponse {
+  Ticket ticket = 1;
+}

@@ -140,16 +140,48 @@ make down      # сохранить данные
 make reset     # удалить volumes
 ```
 
+## Go monorepo (Фаза 0)
+
+Workspace: [`go.work`](go.work) включает `api/gen/go`, `libs/eventkit`, `libs/grpckit`, `services/ticket-service`.
+
+| Пакет | Назначение |
+|-------|------------|
+| [`api/proto`](api/proto) | `.proto` + `buf` codegen → [`api/gen/go`](api/gen/go) |
+| [`libs/grpckit`](libs/grpckit) | gRPC interceptors, metadata, errors |
+| [`libs/eventkit`](libs/eventkit) | NATS JetStream envelope / publish / subscribe |
+
+```bash
+# regenerate stubs (needs buf + protoc-gen-go + protoc-gen-go-grpc)
+make proto
+
+# build shared libraries + generated stubs
+make build-libs
+
+# unit tests
+make test-go
+```
+
+Import paths:
+
+```go
+import (
+    ticketv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/ticket/v1"
+    "github.com/Glistand/HelpDesk/libs/eventkit/natsx"
+    "github.com/Glistand/HelpDesk/libs/eventkit/subjects"
+    "github.com/Glistand/HelpDesk/libs/grpckit"
+)
+```
+
 ## Roadmap
 
 | Фаза | Что делаем |
 |------|------------|
-| 0 | Compose; `api/proto`; общий Go-каркас (`grpckit`, `eventkit`) |
+| 0 | Compose; `api/proto`; общий Go-каркас (`grpckit`, `eventkit`) — **done** |
 | 1 | `ticket-service` (gRPC) + outbox + gateway (HTTP→gRPC) + auth |
 | 2 | assignment, notification, audit |
 | 3 | SLA + escalation + DLQ (`helpdesk.dlq.>`) |
 | 4 | search + BFF aggregation по gRPC |
-| 5 | Next.js MVP |
+| 5 | Next.js MVP (UI preview already in `apps/web`) |
 | 6 | tracing (gRPC + NATS), load/chaos, hardening |
 
 ## Принципы

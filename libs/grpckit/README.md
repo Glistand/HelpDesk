@@ -1,9 +1,22 @@
 # grpckit
 
-Общая библиотека для gRPC-сервисов helpdesk.
+Shared gRPC helpers for Helpdesk services.
 
-- interceptors (logging, recovery, correlation id)
-- metadata helpers (`authorization`, `x-correlation-id`, `x-request-id`)
-- typed error mapping
+## Contents
 
-Используется всеми сервисами monorepo [HelpDesk](https://github.com/Glistand/HelpDesk).
+- `interceptors` — recovery, logging, correlation id
+- `metadata` — `authorization`, `x-correlation-id`, `x-request-id`
+- `statuserr` — typed gRPC status helpers
+
+## Usage
+
+```go
+import (
+    "log/slog"
+
+    "github.com/Glistand/HelpDesk/libs/grpckit"
+    "google.golang.org/grpc"
+)
+
+srv := grpc.NewServer(grpckit.DefaultUnaryServerInterceptors(slog.Default()))
+```
