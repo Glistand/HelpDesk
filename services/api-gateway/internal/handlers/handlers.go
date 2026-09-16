@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	auditv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/audit/v1"
 	authv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/auth/v1"
 	ticketv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/ticket/v1"
 	"github.com/Glistand/HelpDesk/services/api-gateway/internal/clients"
@@ -113,6 +114,33 @@ func (a *API) GetTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, ticketJSON(resp.GetTicket()))
+}
+
+func (a *API) GetTimeline(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		writeErr(w, http.StatusBadRequest, "missing id")
+		return
+	}
+	resp, err := a.c.Audit.GetTimeline(r.Context(), &auditv1.GetTimelineRequest{TicketId: id})
+	if err != nil {
+		writeGRPCErr(w, err)
+		return
+	}
+	events := make([]map[string]any, 0, len(resp.GetEvents()))
+	for _, e := range resp.GetEvents() {
+		events = append(events, map[string]any{
+			"id":          e.GetId(),
+			"ticket_id":   e.GetTicketId(),
+			"event_id":    e.GetEventId(),
+			"event_type":  e.GetEventType(),
+			"title":       e.GetTitle(),
+			"detail":      e.GetDetail(),
+			"actor":       e.GetActor(),
+			"occurred_at": e.GetOccurredAt(),
+		})
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"events": events})
 }
 
 type updateStatusBody struct {

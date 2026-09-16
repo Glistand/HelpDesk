@@ -2,13 +2,14 @@ package subjects
 
 // JetStream subject constants for Helpdesk Event Hub.
 const (
-	TicketCreated     = "helpdesk.ticket.created"
-	TicketAssigned    = "helpdesk.ticket.assigned"
-	TicketUpdated     = "helpdesk.ticket.updated"
-	SLAWarned         = "helpdesk.sla.warned"
-	SLABreached       = "helpdesk.sla.breached"
-	TicketEscalated   = "helpdesk.ticket.escalated"
-	DLQPrefix         = "helpdesk.dlq"
+	TicketCreated      = "helpdesk.ticket.created"
+	TicketAssigned     = "helpdesk.ticket.assigned"
+	TicketUpdated      = "helpdesk.ticket.updated"
+	SLAWarned          = "helpdesk.sla.warned"
+	SLABreached        = "helpdesk.sla.breached"
+	TicketEscalated    = "helpdesk.ticket.escalated"
+	NotificationSent   = "helpdesk.notification.sent"
+	DLQPrefix          = "helpdesk.dlq"
 )
 
 // Stream names created by deploy/compose init.

@@ -10,6 +10,7 @@ service TicketService {
   rpc GetTicket(GetTicketRequest) returns (GetTicketResponse);
   rpc ListTickets(ListTicketsRequest) returns (ListTicketsResponse);
   rpc UpdateTicketStatus(UpdateTicketStatusRequest) returns (UpdateTicketStatusResponse);
+  rpc AssignTicket(AssignTicketRequest) returns (AssignTicketResponse);
 }
 
 enum TicketStatus {
@@ -82,5 +83,14 @@ message UpdateTicketStatusRequest {
 }
 
 message UpdateTicketStatusResponse {
+  Ticket ticket = 1;
+}
+
+message AssignTicketRequest {
+  string id = 1;
+  string assignee_id = 2;
+}
+
+message AssignTicketResponse {
   Ticket ticket = 1;
 }

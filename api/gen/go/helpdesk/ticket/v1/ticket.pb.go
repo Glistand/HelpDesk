@@ -676,6 +676,102 @@ func (x *UpdateTicketStatusResponse) GetTicket() *Ticket {
 	return nil
 }
 
+type AssignTicketRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	AssigneeId    string                 `protobuf:"bytes,2,opt,name=assignee_id,json=assigneeId,proto3" json:"assignee_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AssignTicketRequest) Reset() {
+	*x = AssignTicketRequest{}
+	mi := &file_helpdesk_ticket_v1_ticket_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AssignTicketRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AssignTicketRequest) ProtoMessage() {}
+
+func (x *AssignTicketRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_helpdesk_ticket_v1_ticket_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AssignTicketRequest.ProtoReflect.Descriptor instead.
+func (*AssignTicketRequest) Descriptor() ([]byte, []int) {
+	return file_helpdesk_ticket_v1_ticket_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *AssignTicketRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *AssignTicketRequest) GetAssigneeId() string {
+	if x != nil {
+		return x.AssigneeId
+	}
+	return ""
+}
+
+type AssignTicketResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ticket        *Ticket                `protobuf:"bytes,1,opt,name=ticket,proto3" json:"ticket,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AssignTicketResponse) Reset() {
+	*x = AssignTicketResponse{}
+	mi := &file_helpdesk_ticket_v1_ticket_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AssignTicketResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AssignTicketResponse) ProtoMessage() {}
+
+func (x *AssignTicketResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_helpdesk_ticket_v1_ticket_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AssignTicketResponse.ProtoReflect.Descriptor instead.
+func (*AssignTicketResponse) Descriptor() ([]byte, []int) {
+	return file_helpdesk_ticket_v1_ticket_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *AssignTicketResponse) GetTicket() *Ticket {
+	if x != nil {
+		return x.Ticket
+	}
+	return nil
+}
+
 var File_helpdesk_ticket_v1_ticket_proto protoreflect.FileDescriptor
 
 const file_helpdesk_ticket_v1_ticket_proto_rawDesc = "" +
@@ -722,6 +818,12 @@ const file_helpdesk_ticket_v1_ticket_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x128\n" +
 	"\x06status\x18\x02 \x01(\x0e2 .helpdesk.ticket.v1.TicketStatusR\x06status\"P\n" +
 	"\x1aUpdateTicketStatusResponse\x122\n" +
+	"\x06ticket\x18\x01 \x01(\v2\x1a.helpdesk.ticket.v1.TicketR\x06ticket\"F\n" +
+	"\x13AssignTicketRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n" +
+	"\vassignee_id\x18\x02 \x01(\tR\n" +
+	"assigneeId\"J\n" +
+	"\x14AssignTicketResponse\x122\n" +
 	"\x06ticket\x18\x01 \x01(\v2\x1a.helpdesk.ticket.v1.TicketR\x06ticket*\xad\x01\n" +
 	"\fTicketStatus\x12\x1d\n" +
 	"\x19TICKET_STATUS_UNSPECIFIED\x10\x00\x12\x15\n" +
@@ -735,12 +837,13 @@ const file_helpdesk_ticket_v1_ticket_proto_rawDesc = "" +
 	"\x13TICKET_PRIORITY_LOW\x10\x01\x12\x1a\n" +
 	"\x16TICKET_PRIORITY_NORMAL\x10\x02\x12\x18\n" +
 	"\x14TICKET_PRIORITY_HIGH\x10\x03\x12\x1a\n" +
-	"\x16TICKET_PRIORITY_URGENT\x10\x042\xa1\x03\n" +
+	"\x16TICKET_PRIORITY_URGENT\x10\x042\x84\x04\n" +
 	"\rTicketService\x12a\n" +
 	"\fCreateTicket\x12'.helpdesk.ticket.v1.CreateTicketRequest\x1a(.helpdesk.ticket.v1.CreateTicketResponse\x12X\n" +
 	"\tGetTicket\x12$.helpdesk.ticket.v1.GetTicketRequest\x1a%.helpdesk.ticket.v1.GetTicketResponse\x12^\n" +
 	"\vListTickets\x12&.helpdesk.ticket.v1.ListTicketsRequest\x1a'.helpdesk.ticket.v1.ListTicketsResponse\x12s\n" +
-	"\x12UpdateTicketStatus\x12-.helpdesk.ticket.v1.UpdateTicketStatusRequest\x1a..helpdesk.ticket.v1.UpdateTicketStatusResponseBEZCgithub.com/Glistand/HelpDesk/api/gen/go/helpdesk/ticket/v1;ticketv1b\x06proto3"
+	"\x12UpdateTicketStatus\x12-.helpdesk.ticket.v1.UpdateTicketStatusRequest\x1a..helpdesk.ticket.v1.UpdateTicketStatusResponse\x12a\n" +
+	"\fAssignTicket\x12'.helpdesk.ticket.v1.AssignTicketRequest\x1a(.helpdesk.ticket.v1.AssignTicketResponseBEZCgithub.com/Glistand/HelpDesk/api/gen/go/helpdesk/ticket/v1;ticketv1b\x06proto3"
 
 var (
 	file_helpdesk_ticket_v1_ticket_proto_rawDescOnce sync.Once
@@ -755,7 +858,7 @@ func file_helpdesk_ticket_v1_ticket_proto_rawDescGZIP() []byte {
 }
 
 var file_helpdesk_ticket_v1_ticket_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_helpdesk_ticket_v1_ticket_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_helpdesk_ticket_v1_ticket_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_helpdesk_ticket_v1_ticket_proto_goTypes = []any{
 	(TicketStatus)(0),                  // 0: helpdesk.ticket.v1.TicketStatus
 	(TicketPriority)(0),                // 1: helpdesk.ticket.v1.TicketPriority
@@ -768,6 +871,8 @@ var file_helpdesk_ticket_v1_ticket_proto_goTypes = []any{
 	(*ListTicketsResponse)(nil),        // 8: helpdesk.ticket.v1.ListTicketsResponse
 	(*UpdateTicketStatusRequest)(nil),  // 9: helpdesk.ticket.v1.UpdateTicketStatusRequest
 	(*UpdateTicketStatusResponse)(nil), // 10: helpdesk.ticket.v1.UpdateTicketStatusResponse
+	(*AssignTicketRequest)(nil),        // 11: helpdesk.ticket.v1.AssignTicketRequest
+	(*AssignTicketResponse)(nil),       // 12: helpdesk.ticket.v1.AssignTicketResponse
 }
 var file_helpdesk_ticket_v1_ticket_proto_depIdxs = []int32{
 	0,  // 0: helpdesk.ticket.v1.Ticket.status:type_name -> helpdesk.ticket.v1.TicketStatus
@@ -779,19 +884,22 @@ var file_helpdesk_ticket_v1_ticket_proto_depIdxs = []int32{
 	2,  // 6: helpdesk.ticket.v1.ListTicketsResponse.tickets:type_name -> helpdesk.ticket.v1.Ticket
 	0,  // 7: helpdesk.ticket.v1.UpdateTicketStatusRequest.status:type_name -> helpdesk.ticket.v1.TicketStatus
 	2,  // 8: helpdesk.ticket.v1.UpdateTicketStatusResponse.ticket:type_name -> helpdesk.ticket.v1.Ticket
-	3,  // 9: helpdesk.ticket.v1.TicketService.CreateTicket:input_type -> helpdesk.ticket.v1.CreateTicketRequest
-	5,  // 10: helpdesk.ticket.v1.TicketService.GetTicket:input_type -> helpdesk.ticket.v1.GetTicketRequest
-	7,  // 11: helpdesk.ticket.v1.TicketService.ListTickets:input_type -> helpdesk.ticket.v1.ListTicketsRequest
-	9,  // 12: helpdesk.ticket.v1.TicketService.UpdateTicketStatus:input_type -> helpdesk.ticket.v1.UpdateTicketStatusRequest
-	4,  // 13: helpdesk.ticket.v1.TicketService.CreateTicket:output_type -> helpdesk.ticket.v1.CreateTicketResponse
-	6,  // 14: helpdesk.ticket.v1.TicketService.GetTicket:output_type -> helpdesk.ticket.v1.GetTicketResponse
-	8,  // 15: helpdesk.ticket.v1.TicketService.ListTickets:output_type -> helpdesk.ticket.v1.ListTicketsResponse
-	10, // 16: helpdesk.ticket.v1.TicketService.UpdateTicketStatus:output_type -> helpdesk.ticket.v1.UpdateTicketStatusResponse
-	13, // [13:17] is the sub-list for method output_type
-	9,  // [9:13] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	2,  // 9: helpdesk.ticket.v1.AssignTicketResponse.ticket:type_name -> helpdesk.ticket.v1.Ticket
+	3,  // 10: helpdesk.ticket.v1.TicketService.CreateTicket:input_type -> helpdesk.ticket.v1.CreateTicketRequest
+	5,  // 11: helpdesk.ticket.v1.TicketService.GetTicket:input_type -> helpdesk.ticket.v1.GetTicketRequest
+	7,  // 12: helpdesk.ticket.v1.TicketService.ListTickets:input_type -> helpdesk.ticket.v1.ListTicketsRequest
+	9,  // 13: helpdesk.ticket.v1.TicketService.UpdateTicketStatus:input_type -> helpdesk.ticket.v1.UpdateTicketStatusRequest
+	11, // 14: helpdesk.ticket.v1.TicketService.AssignTicket:input_type -> helpdesk.ticket.v1.AssignTicketRequest
+	4,  // 15: helpdesk.ticket.v1.TicketService.CreateTicket:output_type -> helpdesk.ticket.v1.CreateTicketResponse
+	6,  // 16: helpdesk.ticket.v1.TicketService.GetTicket:output_type -> helpdesk.ticket.v1.GetTicketResponse
+	8,  // 17: helpdesk.ticket.v1.TicketService.ListTickets:output_type -> helpdesk.ticket.v1.ListTicketsResponse
+	10, // 18: helpdesk.ticket.v1.TicketService.UpdateTicketStatus:output_type -> helpdesk.ticket.v1.UpdateTicketStatusResponse
+	12, // 19: helpdesk.ticket.v1.TicketService.AssignTicket:output_type -> helpdesk.ticket.v1.AssignTicketResponse
+	15, // [15:20] is the sub-list for method output_type
+	10, // [10:15] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_helpdesk_ticket_v1_ticket_proto_init() }
@@ -805,7 +913,7 @@ func file_helpdesk_ticket_v1_ticket_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_helpdesk_ticket_v1_ticket_proto_rawDesc), len(file_helpdesk_ticket_v1_ticket_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   9,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

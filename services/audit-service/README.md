@@ -1,5 +1,5 @@
 # audit-service
 
-Append-only timeline событий тикета. gRPC + NATS consumer.
+Append-only timeline тикета. NATS consumer + gRPC `GetTimeline`.
 
 Часть monorepo [HelpDesk](https://github.com/Glistand/HelpDesk).

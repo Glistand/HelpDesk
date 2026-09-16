@@ -23,6 +23,7 @@ const (
 	TicketService_GetTicket_FullMethodName          = "/helpdesk.ticket.v1.TicketService/GetTicket"
 	TicketService_ListTickets_FullMethodName        = "/helpdesk.ticket.v1.TicketService/ListTickets"
 	TicketService_UpdateTicketStatus_FullMethodName = "/helpdesk.ticket.v1.TicketService/UpdateTicketStatus"
+	TicketService_AssignTicket_FullMethodName       = "/helpdesk.ticket.v1.TicketService/AssignTicket"
 )
 
 // TicketServiceClient is the client API for TicketService service.
@@ -35,6 +36,7 @@ type TicketServiceClient interface {
 	GetTicket(ctx context.Context, in *GetTicketRequest, opts ...grpc.CallOption) (*GetTicketResponse, error)
 	ListTickets(ctx context.Context, in *ListTicketsRequest, opts ...grpc.CallOption) (*ListTicketsResponse, error)
 	UpdateTicketStatus(ctx context.Context, in *UpdateTicketStatusRequest, opts ...grpc.CallOption) (*UpdateTicketStatusResponse, error)
+	AssignTicket(ctx context.Context, in *AssignTicketRequest, opts ...grpc.CallOption) (*AssignTicketResponse, error)
 }
 
 type ticketServiceClient struct {
@@ -85,6 +87,16 @@ func (c *ticketServiceClient) UpdateTicketStatus(ctx context.Context, in *Update
 	return out, nil
 }
 
+func (c *ticketServiceClient) AssignTicket(ctx context.Context, in *AssignTicketRequest, opts ...grpc.CallOption) (*AssignTicketResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AssignTicketResponse)
+	err := c.cc.Invoke(ctx, TicketService_AssignTicket_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TicketServiceServer is the server API for TicketService service.
 // All implementations should embed UnimplementedTicketServiceServer
 // for forward compatibility.
@@ -95,6 +107,7 @@ type TicketServiceServer interface {
 	GetTicket(context.Context, *GetTicketRequest) (*GetTicketResponse, error)
 	ListTickets(context.Context, *ListTicketsRequest) (*ListTicketsResponse, error)
 	UpdateTicketStatus(context.Context, *UpdateTicketStatusRequest) (*UpdateTicketStatusResponse, error)
+	AssignTicket(context.Context, *AssignTicketRequest) (*AssignTicketResponse, error)
 }
 
 // UnimplementedTicketServiceServer should be embedded to have
@@ -115,6 +128,9 @@ func (UnimplementedTicketServiceServer) ListTickets(context.Context, *ListTicket
 }
 func (UnimplementedTicketServiceServer) UpdateTicketStatus(context.Context, *UpdateTicketStatusRequest) (*UpdateTicketStatusResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateTicketStatus not implemented")
+}
+func (UnimplementedTicketServiceServer) AssignTicket(context.Context, *AssignTicketRequest) (*AssignTicketResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AssignTicket not implemented")
 }
 func (UnimplementedTicketServiceServer) testEmbeddedByValue() {}
 
@@ -208,6 +224,24 @@ func _TicketService_UpdateTicketStatus_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TicketService_AssignTicket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AssignTicketRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TicketServiceServer).AssignTicket(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TicketService_AssignTicket_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TicketServiceServer).AssignTicket(ctx, req.(*AssignTicketRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TicketService_ServiceDesc is the grpc.ServiceDesc for TicketService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -230,6 +264,10 @@ var TicketService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateTicketStatus",
 			Handler:    _TicketService_UpdateTicketStatus_Handler,
+		},
+		{
+			MethodName: "AssignTicket",
+			Handler:    _TicketService_AssignTicket_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

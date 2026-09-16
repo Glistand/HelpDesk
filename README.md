@@ -121,6 +121,9 @@ make up
 | Meilisearch | 7700 | поиск *(после MVP)* |
 | `auth-service` | 50051 | gRPC JWT |
 | `ticket-service` | 50052 | gRPC tickets + outbox → NATS |
+| `assignment-service` | 50053 | auto-assign (round-robin L1) |
+| `audit-service` | 50054 | timeline gRPC |
+| `notification-service` | — | mock notify → `notification.sent` |
 | `api-gateway` | 8080 | HTTP → gRPC |
 
 JetStream streams создаются автоматически контейнером `nats-init`:
@@ -144,6 +147,9 @@ curl -s -X POST http://localhost:8080/tickets \
   -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{"title":"VPN down","description":"Cannot connect","priority":"high","category":"Network"}'
+
+# Phase 2 happy path (assign → notify → audit timeline)
+make e2e
 ```
 
 Остановка:
@@ -155,7 +161,7 @@ make reset     # удалить volumes
 
 ## Go monorepo
 
-Workspace: [`go.work`](go.work) включает libs, codegen и сервисы Фазы 1.
+Workspace: [`go.work`](go.work) включает libs, codegen и сервисы Фаз 0–2.
 
 | Пакет | Назначение |
 |-------|------------|
@@ -164,12 +170,16 @@ Workspace: [`go.work`](go.work) включает libs, codegen и сервисы
 | [`libs/eventkit`](libs/eventkit) | NATS JetStream envelope / publish / subscribe |
 | [`services/auth-service`](services/auth-service) | Login / ValidateToken (JWT) |
 | [`services/ticket-service`](services/ticket-service) | CRUD + transactional outbox |
-| [`services/api-gateway`](services/api-gateway) | HTTP BFF |
+| [`services/assignment-service`](services/assignment-service) | consume created → AssignTicket |
+| [`services/notification-service`](services/notification-service) | mock notify + `notification.sent` |
+| [`services/audit-service`](services/audit-service) | append-only timeline |
+| [`services/api-gateway`](services/api-gateway) | HTTP BFF (`GET /tickets/{id}/timeline`) |
 
 ```bash
 make proto
 make build-services
 make test-go
+make e2e
 ```
 
 Dev seed user: `agent@helpdesk.local` / `password`.
@@ -180,7 +190,7 @@ Dev seed user: `agent@helpdesk.local` / `password`.
 |------|------------|
 | 0 | Compose; `api/proto`; общий Go-каркас (`grpckit`, `eventkit`) — **done** |
 | 1 | `ticket-service` (gRPC) + outbox + gateway (HTTP→gRPC) + auth — **done** |
-| 2 | assignment, notification, audit |
+| 2 | assignment, notification, audit — **done** |
 | 3 | SLA + escalation + DLQ (`helpdesk.dlq.>`) |
 | 4 | search + BFF aggregation по gRPC |
 | 5 | Next.js MVP (UI preview already in `apps/web`) |
@@ -201,8 +211,9 @@ Dev seed user: `agent@helpdesk.local` / `password`.
 | Subject | Кто публикует | Кто слушает |
 |---------|---------------|-------------|
 | `helpdesk.ticket.created` | ticket-service | assignment, sla, notification, audit, search |
-| `helpdesk.ticket.assigned` | assignment-service | sla, notification, audit |
+| `helpdesk.ticket.assigned` | ticket-service (после AssignTicket) | sla, notification, audit |
 | `helpdesk.ticket.updated` | ticket-service | audit, search |
+| `helpdesk.notification.sent` | notification-service | audit |
 | `helpdesk.sla.warned` | sla-service | notification |
 | `helpdesk.sla.breached` | sla-service | escalation, notification |
 | `helpdesk.ticket.escalated` | escalation-service | notification, audit |

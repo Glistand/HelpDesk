@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package helpdesk.audit.v1;
+
+option go_package = "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/audit/v1;auditv1";
+
+// AuditService exposes the append-only ticket timeline.
+service AuditService {
+  rpc GetTimeline(GetTimelineRequest) returns (GetTimelineResponse);
+}
+
+message TimelineEvent {
+  string id = 1;
+  string ticket_id = 2;
+  string event_id = 3;
+  string event_type = 4;
+  string title = 5;
+  string detail = 6;
+  string actor = 7;
+  string occurred_at = 8;
+}
+
+message GetTimelineRequest {
+  string ticket_id = 1;
+}
+
+message GetTimelineResponse {
+  repeated TimelineEvent events = 1;
+}

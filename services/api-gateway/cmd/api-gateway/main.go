@@ -22,7 +22,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	c, err := clients.Dial(ctx, cfg.AuthGRPCAddr, cfg.TicketGRPCAddr)
+	c, err := clients.Dial(ctx, cfg.AuthGRPCAddr, cfg.TicketGRPCAddr, cfg.AssignmentGRPCAddr, cfg.AuditGRPCAddr)
 	if err != nil {
 		logger.Error("dial grpc failed", "error", err)
 		os.Exit(1)
@@ -38,6 +38,7 @@ func main() {
 	mux.Handle("POST /tickets", auth(http.HandlerFunc(api.CreateTicket)))
 	mux.Handle("GET /tickets", auth(http.HandlerFunc(api.ListTickets)))
 	mux.Handle("GET /tickets/{id}", auth(http.HandlerFunc(api.GetTicket)))
+	mux.Handle("GET /tickets/{id}/timeline", auth(http.HandlerFunc(api.GetTimeline)))
 	mux.Handle("PATCH /tickets/{id}/status", auth(http.HandlerFunc(api.UpdateTicketStatus)))
 
 	srv := &http.Server{

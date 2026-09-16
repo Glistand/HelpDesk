@@ -15,24 +15,30 @@ type Handler func(ctx context.Context, ev envelope.Event) error
 
 // SubscriberConfig configures a durable pull consumer.
 type SubscriberConfig struct {
-	Stream   string
-	Durable  string
-	Filter   string // subject filter, e.g. helpdesk.ticket.created
-	Logger   *slog.Logger
+	Stream         string
+	Durable        string
+	Filter         string   // single subject filter
+	FilterSubjects []string // multi-subject filter (preferred when set)
+	Logger         *slog.Logger
 }
 
 // Subscribe starts a pull consumer loop until ctx is cancelled.
-// This is a skeleton: ack on success, nak on handler error.
 func Subscribe(ctx context.Context, js jetstream.JetStream, cfg SubscriberConfig, handler Handler) error {
 	if cfg.Logger == nil {
 		cfg.Logger = slog.Default()
 	}
 
-	cons, err := js.CreateOrUpdateConsumer(ctx, cfg.Stream, jetstream.ConsumerConfig{
-		Durable:       cfg.Durable,
-		FilterSubject: cfg.Filter,
-		AckPolicy:     jetstream.AckExplicitPolicy,
-	})
+	consCfg := jetstream.ConsumerConfig{
+		Durable:   cfg.Durable,
+		AckPolicy: jetstream.AckExplicitPolicy,
+	}
+	if len(cfg.FilterSubjects) > 0 {
+		consCfg.FilterSubjects = cfg.FilterSubjects
+	} else if cfg.Filter != "" {
+		consCfg.FilterSubject = cfg.Filter
+	}
+
+	cons, err := js.CreateOrUpdateConsumer(ctx, cfg.Stream, consCfg)
 	if err != nil {
 		return fmt.Errorf("create consumer: %w", err)
 	}

@@ -5,6 +5,9 @@ use (
 	./libs/eventkit
 	./libs/grpckit
 	./services/api-gateway
+	./services/assignment-service
+	./services/audit-service
 	./services/auth-service
+	./services/notification-service
 	./services/ticket-service
 )

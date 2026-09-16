@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package helpdesk.assignment.v1;
+
+option go_package = "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/assignment/v1;assignmentv1";
+
+// AssignmentService exposes assignment lookup (auto-assign runs via NATS).
+service AssignmentService {
+  rpc GetAssignment(GetAssignmentRequest) returns (GetAssignmentResponse);
+}
+
+message Assignment {
+  string ticket_id = 1;
+  string assignee_id = 2;
+  string assignee_name = 3;
+  string assigned_at = 4;
+}
+
+message GetAssignmentRequest {
+  string ticket_id = 1;
+}
+
+message GetAssignmentResponse {
+  Assignment assignment = 1;
+}

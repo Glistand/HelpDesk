@@ -2,6 +2,7 @@ package grpcserver
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	ticketv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/ticket/v1"
@@ -80,6 +81,23 @@ func (s *Server) UpdateTicketStatus(ctx context.Context, req *ticketv1.UpdateTic
 		return nil, statuserr.FromError(err)
 	}
 	return &ticketv1.UpdateTicketStatusResponse{Ticket: toProto(t)}, nil
+}
+
+func (s *Server) AssignTicket(ctx context.Context, req *ticketv1.AssignTicketRequest) (*ticketv1.AssignTicketResponse, error) {
+	if strings.TrimSpace(req.GetAssigneeId()) == "" {
+		return nil, status.Error(codes.InvalidArgument, "assignee_id is required")
+	}
+	t, err := s.repo.Assign(ctx, req.GetId(), req.GetAssigneeId(), metadata.CorrelationIDFromContext(ctx))
+	if err != nil {
+		if err == repository.ErrNotFound {
+			return nil, statuserr.NotFound("ticket not found")
+		}
+		if err == repository.ErrEmptyAssignee {
+			return nil, status.Error(codes.InvalidArgument, "assignee_id is required")
+		}
+		return nil, statuserr.FromError(err)
+	}
+	return &ticketv1.AssignTicketResponse{Ticket: toProto(t)}, nil
 }
 
 func toProto(t domain.Ticket) *ticketv1.Ticket {

@@ -16,6 +16,7 @@ import (
 
 var ErrNotFound = errors.New("ticket not found")
 var ErrEmptyTitle = errors.New("title is required")
+var ErrEmptyAssignee = errors.New("assignee_id is required")
 
 type TicketRepo struct {
 	db *sql.DB
@@ -192,6 +193,63 @@ func (r *TicketRepo) UpdateStatus(ctx context.Context, id string, status domain.
 		INSERT INTO outbox (event_id, aggregate_id, event_type, subject, correlation_id, payload, created_at)
 		VALUES ($1,$2,$3,$4,$5,$6,$7)`,
 		uuid.NewString(), t.ID, "ticket.updated", subjects.TicketUpdated, correlationID, payload, now,
+	)
+	if err != nil {
+		return domain.Ticket{}, err
+	}
+	if err := tx.Commit(); err != nil {
+		return domain.Ticket{}, err
+	}
+	return t, nil
+}
+
+func (r *TicketRepo) Assign(ctx context.Context, id, assigneeID, correlationID string) (domain.Ticket, error) {
+	assigneeID = strings.TrimSpace(assigneeID)
+	if assigneeID == "" {
+		return domain.Ticket{}, ErrEmptyAssignee
+	}
+	now := time.Now().UTC()
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return domain.Ticket{}, err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	res, err := tx.ExecContext(ctx, `
+		UPDATE tickets
+		SET assignee_id = $1, status = CASE WHEN status = 'new' THEN 'open' ELSE status END, updated_at = $2
+		WHERE id = $3`,
+		assigneeID, now, id,
+	)
+	if err != nil {
+		return domain.Ticket{}, err
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		return domain.Ticket{}, ErrNotFound
+	}
+
+	row := tx.QueryRowContext(ctx, `
+		SELECT id, title, description, status, priority, category, requester, assignee_id, created_at, updated_at
+		FROM tickets WHERE id = $1`, id)
+	t, err := scanTicket(row)
+	if err != nil {
+		return domain.Ticket{}, err
+	}
+
+	payload, err := json.Marshal(map[string]any{
+		"id":          t.ID,
+		"assignee_id": t.AssigneeID,
+		"status":      t.Status,
+		"updated_at":  t.UpdatedAt.Format(time.RFC3339),
+	})
+	if err != nil {
+		return domain.Ticket{}, err
+	}
+	_, err = tx.ExecContext(ctx, `
+		INSERT INTO outbox (event_id, aggregate_id, event_type, subject, correlation_id, payload, created_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+		uuid.NewString(), t.ID, "ticket.assigned", subjects.TicketAssigned, correlationID, payload, now,
 	)
 	if err != nil {
 		return domain.Ticket{}, err

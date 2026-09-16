@@ -1,4 +1,4 @@
-.PHONY: up down logs ps reset nats-streams env web web-build proto build-libs build-services test-go
+.PHONY: up down logs ps reset nats-streams env web web-build proto build-libs build-services test-go e2e
 
 COMPOSE_FILE := deploy/compose/docker-compose.yml
 ENV_FILE := .env
@@ -43,6 +43,9 @@ build-libs:
 build-services: build-libs
 	go build -o bin/auth-service ./services/auth-service/cmd/auth-service
 	go build -o bin/ticket-service ./services/ticket-service/cmd/ticket-service
+	go build -o bin/assignment-service ./services/assignment-service/cmd/assignment-service
+	go build -o bin/notification-service ./services/notification-service/cmd/notification-service
+	go build -o bin/audit-service ./services/audit-service/cmd/audit-service
 	go build -o bin/api-gateway ./services/api-gateway/cmd/api-gateway
 
 test-go:
@@ -50,4 +53,10 @@ test-go:
 		github.com/Glistand/HelpDesk/libs/grpckit/... \
 		github.com/Glistand/HelpDesk/services/ticket-service/... \
 		github.com/Glistand/HelpDesk/services/auth-service/... \
+		github.com/Glistand/HelpDesk/services/assignment-service/... \
+		github.com/Glistand/HelpDesk/services/notification-service/... \
+		github.com/Glistand/HelpDesk/services/audit-service/... \
 		github.com/Glistand/HelpDesk/services/api-gateway/...
+
+e2e:
+	./scripts/e2e-phase2.sh
