@@ -1,0 +1,140 @@
+@import "tailwindcss";
+
+/* Linear (dark) + Attio (light) · Sparkbites design refs */
+
+:root,
+[data-theme="dark"] {
+  --bg-base: #08090a;
+  --bg-frame: #090a0b;
+  --bg-elevated: #0f1011;
+  --bg-card: #151617;
+  --bg-view: #121314;
+  --bg-input: rgba(255, 255, 255, 0.02);
+  --text-primary: #f7f8f8;
+  --text-secondary: #d0d6e0;
+  --text-tertiary: #8a8f98;
+  --accent: #5e6ad2;
+  --accent-muted: rgba(94, 106, 210, 0.15);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-ring: rgba(0, 0, 0, 0.33);
+  --status-red: #eb5757;
+  --status-amber: #f59e0b;
+  --status-green: #10b981;
+  --status-violet: #8b5cf6;
+  --rail-width: 56px;
+  --list-width: 340px;
+  --ring-surface: rgba(0, 0, 0, 0.33) 0 0 0 1px;
+}
+
+[data-theme="light"] {
+  --bg-base: #ffffff;
+  --bg-frame: #fafafa;
+  --bg-elevated: #f4f4f5;
+  --bg-card: #ffffff;
+  --bg-view: #f7f7f8;
+  --bg-input: #fafafa;
+  --text-primary: #171717;
+  --text-secondary: #52525b;
+  --text-tertiary: #a1a1aa;
+  --accent: #5e6ad2;
+  --accent-muted: rgba(94, 106, 210, 0.12);
+  --border: #e5e5e5;
+  --border-ring: rgba(0, 0, 0, 0.08);
+  --status-red: #dc2626;
+  --status-amber: #d97706;
+  --status-green: #059669;
+  --status-violet: #7c3aed;
+  --ring-surface: rgba(0, 0, 0, 0.08) 0 0 0 1px;
+}
+
+@theme inline {
+  --color-base: var(--bg-base);
+  --color-frame: var(--bg-frame);
+  --color-elevated: var(--bg-elevated);
+  --color-card: var(--bg-card);
+  --color-view: var(--bg-view);
+  --color-input: var(--bg-input);
+  --color-primary: var(--text-primary);
+  --color-secondary: var(--text-secondary);
+  --color-tertiary: var(--text-tertiary);
+  --color-accent: var(--accent);
+  --color-accent-muted: var(--accent-muted);
+  --color-border: var(--border);
+  --color-status-red: var(--status-red);
+  --color-status-amber: var(--status-amber);
+  --color-status-green: var(--status-green);
+  --color-status-violet: var(--status-violet);
+  --font-sans: var(--font-inter);
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-feature-settings: "cv01", "ss03";
+  font-weight: 400;
+}
+
+.font-ui-medium {
+  font-weight: 510;
+}
+
+.font-ui-semibold {
+  font-weight: 590;
+}
+
+.ring-surface {
+  box-shadow: var(--ring-surface);
+}
+
+.shadow-elevated {
+  box-shadow:
+    rgba(0, 0, 0, 0) 0 8px 2px,
+    rgba(0, 0, 0, 0.01) 0 5px 2px,
+    rgba(0, 0, 0, 0.04) 0 3px 2px,
+    rgba(0, 0, 0, 0.07) 0 1px 1px,
+    rgba(0, 0, 0, 0.08) 0 0 1px;
+}
+
+[data-theme="light"] .shadow-elevated {
+  box-shadow:
+    rgba(0, 0, 0, 0.04) 0 1px 2px,
+    rgba(0, 0, 0, 0.06) 0 4px 12px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.field-input {
+  width: 100%;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  padding: 0.5rem 0.75rem;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.field-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.field-input:focus {
+  border-color: rgba(94, 106, 210, 0.45);
+  outline: none;
+}
