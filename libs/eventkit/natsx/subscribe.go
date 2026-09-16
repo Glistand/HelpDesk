@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Glistand/HelpDesk/libs/eventkit/envelope"
+	"github.com/Glistand/HelpDesk/libs/eventkit/subjects"
 	"github.com/nats-io/nats.go/jetstream"
 )
 
@@ -19,6 +20,8 @@ type SubscriberConfig struct {
 	Durable        string
 	Filter         string   // single subject filter
 	FilterSubjects []string // multi-subject filter (preferred when set)
+	MaxDeliver     int      // JetStream max delivery attempts before DLQ (default 5)
+	EnableDLQ      bool     // publish to HELP_DESK_DLQ after MaxDeliver
 	Logger         *slog.Logger
 }
 
@@ -27,10 +30,16 @@ func Subscribe(ctx context.Context, js jetstream.JetStream, cfg SubscriberConfig
 	if cfg.Logger == nil {
 		cfg.Logger = slog.Default()
 	}
+	maxDeliver := cfg.MaxDeliver
+	if maxDeliver <= 0 {
+		maxDeliver = 5
+	}
 
 	consCfg := jetstream.ConsumerConfig{
-		Durable:   cfg.Durable,
-		AckPolicy: jetstream.AckExplicitPolicy,
+		Durable:       cfg.Durable,
+		AckPolicy:     jetstream.AckExplicitPolicy,
+		MaxDeliver:    maxDeliver,
+		AckWait:       30 * time.Second,
 	}
 	if len(cfg.FilterSubjects) > 0 {
 		consCfg.FilterSubjects = cfg.FilterSubjects
@@ -65,12 +74,36 @@ func Subscribe(ctx context.Context, js jetstream.JetStream, cfg SubscriberConfig
 					_ = msg.Term()
 					continue
 				}
+
+				meta, _ := msg.Metadata()
+				delivered := uint64(1)
+				if meta != nil {
+					delivered = meta.NumDelivered
+				}
+
 				if err := handler(ctx, ev); err != nil {
 					cfg.Logger.Error("handler failed",
 						"type", ev.Type,
 						"event_id", ev.EventID,
+						"delivered", delivered,
+						"max_deliver", maxDeliver,
 						"error", err,
 					)
+					if int(delivered) >= maxDeliver {
+						if cfg.EnableDLQ {
+							if dlqErr := publishDLQ(ctx, js, cfg.Durable, msg.Subject(), ev, err); dlqErr != nil {
+								cfg.Logger.Error("dlq publish failed", "error", dlqErr)
+							} else {
+								cfg.Logger.Warn("moved to DLQ",
+									"durable", cfg.Durable,
+									"event_id", ev.EventID,
+									"subject", msg.Subject(),
+								)
+							}
+						}
+						_ = msg.Term()
+						continue
+					}
 					_ = msg.Nak()
 					continue
 				}
@@ -80,4 +113,25 @@ func Subscribe(ctx context.Context, js jetstream.JetStream, cfg SubscriberConfig
 	}()
 
 	return nil
+}
+
+func publishDLQ(ctx context.Context, js jetstream.JetStream, durable, originalSubject string, ev envelope.Event, cause error) error {
+	payload := map[string]any{
+		"original_subject": originalSubject,
+		"durable":          durable,
+		"error":            cause.Error(),
+		"event":            ev,
+	}
+	dlqEv, err := envelope.New("dlq.poison", ev.AggregateID, ev.CorrelationID, payload)
+	if err != nil {
+		return err
+	}
+	// Preserve original event_id linkage in aggregate; use fresh dlq event id.
+	subject := subjects.DLQSubject(originalSubject)
+	data, err := dlqEv.Marshal()
+	if err != nil {
+		return err
+	}
+	_, err = js.Publish(ctx, subject, data, jetstream.WithMsgID(dlqEv.EventID))
+	return err
 }

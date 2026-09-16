@@ -7,6 +7,7 @@ import (
 
 	auditv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/audit/v1"
 	authv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/auth/v1"
+	slav1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/sla/v1"
 	ticketv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/ticket/v1"
 	"github.com/Glistand/HelpDesk/services/api-gateway/internal/clients"
 	"github.com/Glistand/HelpDesk/services/api-gateway/internal/middleware"
@@ -141,6 +142,44 @@ func (a *API) GetTimeline(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"events": events})
+}
+
+func (a *API) GetSLA(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		writeErr(w, http.StatusBadRequest, "missing id")
+		return
+	}
+	resp, err := a.c.SLA.GetSLA(r.Context(), &slav1.GetSLARequest{TicketId: id})
+	if err != nil {
+		writeGRPCErr(w, err)
+		return
+	}
+	s := resp.GetSla()
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ticket_id":          s.GetTicketId(),
+		"state":              slaStateString(s.GetState()),
+		"first_response_due": s.GetFirstResponseDue(),
+		"resolve_due":        s.GetResolveDue(),
+		"warned_at":          s.GetWarnedAt(),
+		"breached_at":        s.GetBreachedAt(),
+		"policy":             s.GetPolicy(),
+	})
+}
+
+func slaStateString(s slav1.SLAState) string {
+	switch s {
+	case slav1.SLAState_SLA_STATE_OK:
+		return "ok"
+	case slav1.SLAState_SLA_STATE_WARNING:
+		return "warning"
+	case slav1.SLAState_SLA_STATE_BREACHED:
+		return "breached"
+	case slav1.SLAState_SLA_STATE_CANCELLED:
+		return "cancelled"
+	default:
+		return "unspecified"
+	}
 }
 
 type updateStatusBody struct {

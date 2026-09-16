@@ -31,7 +31,7 @@ func New(repo *repository.Repo, pub *natsx.Publisher, failFirstN int, logger *sl
 
 func (h *Handler) Handle(ctx context.Context, ev envelope.Event) error {
 	switch ev.Type {
-	case "ticket.created", "ticket.assigned":
+	case "ticket.created", "ticket.assigned", "sla.warned", "sla.breached", "ticket.escalated":
 	default:
 		return nil
 	}
@@ -98,9 +98,16 @@ func (h *Handler) Handle(ctx context.Context, ev envelope.Event) error {
 
 func Subscribe(ctx context.Context, js jetstream.JetStream, h *Handler) error {
 	return natsx.Subscribe(ctx, js, natsx.SubscriberConfig{
-		Stream:         subjects.StreamEvents,
-		Durable:        "notification-events",
-		FilterSubjects: []string{subjects.TicketCreated, subjects.TicketAssigned},
-		Logger:         h.logger,
+		Stream:  subjects.StreamEvents,
+		Durable: "notification-events",
+		FilterSubjects: []string{
+			subjects.TicketCreated,
+			subjects.TicketAssigned,
+			subjects.SLAWarned,
+			subjects.SLABreached,
+			subjects.TicketEscalated,
+		},
+		EnableDLQ: true,
+		Logger:    h.logger,
 	}, h.Handle)
 }

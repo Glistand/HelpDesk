@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package helpdesk.escalation.v1;
+
+option go_package = "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/escalation/v1;escalationv1";
+
+// EscalationService exposes escalation history for a ticket.
+service EscalationService {
+  rpc GetEscalation(GetEscalationRequest) returns (GetEscalationResponse);
+}
+
+message Escalation {
+  string ticket_id = 1;
+  string reason = 2;
+  string from_assignee = 3;
+  string to_assignee = 4;
+  string escalated_at = 5;
+  string source_event = 6;
+}
+
+message GetEscalationRequest {
+  string ticket_id = 1;
+}
+
+message GetEscalationResponse {
+  Escalation escalation = 1;
+}

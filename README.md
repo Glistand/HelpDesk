@@ -123,6 +123,8 @@ make up
 | `ticket-service` | 50052 | gRPC tickets + outbox → NATS |
 | `assignment-service` | 50053 | auto-assign (round-robin L1) |
 | `audit-service` | 50054 | timeline gRPC |
+| `sla-service` | 50055 | Redis timers → `sla.warned` / `sla.breached` |
+| `escalation-service` | 50056 | on breach → L2 assign + `ticket.escalated` |
 | `notification-service` | — | mock notify → `notification.sent` |
 | `api-gateway` | 8080 | HTTP → gRPC |
 
@@ -148,8 +150,9 @@ curl -s -X POST http://localhost:8080/tickets \
   -H 'Content-Type: application/json' \
   -d '{"title":"VPN down","description":"Cannot connect","priority":"high","category":"Network"}'
 
-# Phase 2 happy path (assign → notify → audit timeline)
-make e2e
+# Phase 2+3 happy path
+make e2e          # assign/notify/audit + SLA breach → L2
+make e2e-phase3   # только SLA/escalation
 ```
 
 Остановка:
@@ -161,19 +164,21 @@ make reset     # удалить volumes
 
 ## Go monorepo
 
-Workspace: [`go.work`](go.work) включает libs, codegen и сервисы Фаз 0–2.
+Workspace: [`go.work`](go.work) включает libs, codegen и сервисы Фаз 0–3.
 
 | Пакет | Назначение |
 |-------|------------|
 | [`api/proto`](api/proto) | `.proto` + `buf` codegen → [`api/gen/go`](api/gen/go) |
 | [`libs/grpckit`](libs/grpckit) | gRPC interceptors, metadata, errors |
-| [`libs/eventkit`](libs/eventkit) | NATS JetStream envelope / publish / subscribe |
+| [`libs/eventkit`](libs/eventkit) | NATS JetStream envelope / publish / subscribe / DLQ |
 | [`services/auth-service`](services/auth-service) | Login / ValidateToken (JWT) |
 | [`services/ticket-service`](services/ticket-service) | CRUD + transactional outbox |
 | [`services/assignment-service`](services/assignment-service) | consume created → AssignTicket |
 | [`services/notification-service`](services/notification-service) | mock notify + `notification.sent` |
 | [`services/audit-service`](services/audit-service) | append-only timeline |
-| [`services/api-gateway`](services/api-gateway) | HTTP BFF (`GET /tickets/{id}/timeline`) |
+| [`services/sla-service`](services/sla-service) | Redis SLA timers |
+| [`services/escalation-service`](services/escalation-service) | breach → L2 |
+| [`services/api-gateway`](services/api-gateway) | HTTP BFF (`timeline`, `sla`) |
 
 ```bash
 make proto
@@ -184,6 +189,8 @@ make e2e
 
 Dev seed user: `agent@helpdesk.local` / `password`.
 
+Compose SLA defaults (override via `.env`): `SLA_FIRST_RESPONSE=5s`, `SLA_RESOLVE=30s`, `SLA_WARN_RATIO=0.5`.
+
 ## Roadmap
 
 | Фаза | Что делаем |
@@ -191,7 +198,7 @@ Dev seed user: `agent@helpdesk.local` / `password`.
 | 0 | Compose; `api/proto`; общий Go-каркас (`grpckit`, `eventkit`) — **done** |
 | 1 | `ticket-service` (gRPC) + outbox + gateway (HTTP→gRPC) + auth — **done** |
 | 2 | assignment, notification, audit — **done** |
-| 3 | SLA + escalation + DLQ (`helpdesk.dlq.>`) |
+| 3 | SLA + escalation + DLQ (`helpdesk.dlq.>`) — **done** |
 | 4 | search + BFF aggregation по gRPC |
 | 5 | Next.js MVP (UI preview already in `apps/web`) |
 | 6 | tracing (gRPC + NATS), load/chaos, hardening |

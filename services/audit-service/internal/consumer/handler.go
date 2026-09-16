@@ -80,6 +80,15 @@ func mapEvent(ev envelope.Event) (title, detail, actor string, ok bool) {
 		channel, _ := p["channel"].(string)
 		recipient, _ := p["recipient"].(string)
 		return "Уведомление отправлено", channel + " → " + recipient, "notification-service", true
+	case "sla.warned":
+		kind, _ := p["kind"].(string)
+		return "SLA: предупреждение", kind, "sla-service", true
+	case "sla.breached":
+		kind, _ := p["kind"].(string)
+		return "SLA нарушен", kind, "sla-service", true
+	case "ticket.escalated":
+		to, _ := p["to_assignee"].(string)
+		return "Эскалация на L2", "to=" + to, "escalation-service", true
 	default:
 		return "", "", "", false
 	}
@@ -87,14 +96,18 @@ func mapEvent(ev envelope.Event) (title, detail, actor string, ok bool) {
 
 func Subscribe(ctx context.Context, js jetstream.JetStream, h *Handler) error {
 	return natsx.Subscribe(ctx, js, natsx.SubscriberConfig{
-		Stream: subjects.StreamEvents,
+		Stream:  subjects.StreamEvents,
 		Durable: "audit-timeline",
 		FilterSubjects: []string{
 			subjects.TicketCreated,
 			subjects.TicketAssigned,
 			subjects.TicketUpdated,
 			subjects.NotificationSent,
+			subjects.SLAWarned,
+			subjects.SLABreached,
+			subjects.TicketEscalated,
 		},
-		Logger: h.logger,
+		EnableDLQ: true,
+		Logger:    h.logger,
 	}, h.Handle)
 }

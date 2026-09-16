@@ -6,6 +6,7 @@ import (
 	assignmentv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/assignment/v1"
 	auditv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/audit/v1"
 	authv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/auth/v1"
+	slav1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/sla/v1"
 	ticketv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/ticket/v1"
 	"github.com/Glistand/HelpDesk/libs/grpckit"
 	"google.golang.org/grpc"
@@ -17,10 +18,11 @@ type Clients struct {
 	Ticket     ticketv1.TicketServiceClient
 	Assignment assignmentv1.AssignmentServiceClient
 	Audit      auditv1.AuditServiceClient
+	SLA        slav1.SLAServiceClient
 	conns      []*grpc.ClientConn
 }
 
-func Dial(ctx context.Context, authAddr, ticketAddr, assignmentAddr, auditAddr string) (*Clients, error) {
+func Dial(ctx context.Context, authAddr, ticketAddr, assignmentAddr, auditAddr, slaAddr string) (*Clients, error) {
 	dial := func(addr string) (*grpc.ClientConn, error) {
 		return grpc.NewClient(addr,
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -28,35 +30,26 @@ func Dial(ctx context.Context, authAddr, ticketAddr, assignmentAddr, auditAddr s
 		)
 	}
 
-	authConn, err := dial(authAddr)
-	if err != nil {
-		return nil, err
-	}
-	ticketConn, err := dial(ticketAddr)
-	if err != nil {
-		_ = authConn.Close()
-		return nil, err
-	}
-	assignmentConn, err := dial(assignmentAddr)
-	if err != nil {
-		_ = authConn.Close()
-		_ = ticketConn.Close()
-		return nil, err
-	}
-	auditConn, err := dial(auditAddr)
-	if err != nil {
-		_ = authConn.Close()
-		_ = ticketConn.Close()
-		_ = assignmentConn.Close()
-		return nil, err
+	addrs := []string{authAddr, ticketAddr, assignmentAddr, auditAddr, slaAddr}
+	conns := make([]*grpc.ClientConn, 0, len(addrs))
+	for _, addr := range addrs {
+		c, err := dial(addr)
+		if err != nil {
+			for _, x := range conns {
+				_ = x.Close()
+			}
+			return nil, err
+		}
+		conns = append(conns, c)
 	}
 
 	return &Clients{
-		Auth:       authv1.NewAuthServiceClient(authConn),
-		Ticket:     ticketv1.NewTicketServiceClient(ticketConn),
-		Assignment: assignmentv1.NewAssignmentServiceClient(assignmentConn),
-		Audit:      auditv1.NewAuditServiceClient(auditConn),
-		conns:      []*grpc.ClientConn{authConn, ticketConn, assignmentConn, auditConn},
+		Auth:       authv1.NewAuthServiceClient(conns[0]),
+		Ticket:     ticketv1.NewTicketServiceClient(conns[1]),
+		Assignment: assignmentv1.NewAssignmentServiceClient(conns[2]),
+		Audit:      auditv1.NewAuditServiceClient(conns[3]),
+		SLA:        slav1.NewSLAServiceClient(conns[4]),
+		conns:      conns,
 	}, nil
 }
 

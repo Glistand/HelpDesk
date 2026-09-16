@@ -8,6 +8,8 @@ use (
 	./services/assignment-service
 	./services/audit-service
 	./services/auth-service
+	./services/escalation-service
 	./services/notification-service
+	./services/sla-service
 	./services/ticket-service
 )

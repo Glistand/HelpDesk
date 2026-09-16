@@ -84,9 +84,10 @@ func (h *Handler) Handle(ctx context.Context, ev envelope.Event) error {
 
 func Subscribe(ctx context.Context, js jetstream.JetStream, h *Handler) error {
 	return natsx.Subscribe(ctx, js, natsx.SubscriberConfig{
-		Stream:  subjects.StreamEvents,
-		Durable: "assignment-created",
-		Filter:  subjects.TicketCreated,
-		Logger:  h.logger,
+		Stream:    subjects.StreamEvents,
+		Durable:   "assignment-created",
+		Filter:    subjects.TicketCreated,
+		EnableDLQ: true,
+		Logger:    h.logger,
 	}, h.Handle)
 }

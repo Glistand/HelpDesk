@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package helpdesk.sla.v1;
+
+option go_package = "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/sla/v1;slav1";
+
+// SLAService exposes per-ticket SLA state for the BFF.
+service SLAService {
+  rpc GetSLA(GetSLARequest) returns (GetSLAResponse);
+}
+
+enum SLAState {
+  SLA_STATE_UNSPECIFIED = 0;
+  SLA_STATE_OK = 1;
+  SLA_STATE_WARNING = 2;
+  SLA_STATE_BREACHED = 3;
+  SLA_STATE_CANCELLED = 4;
+}
+
+message SLA {
+  string ticket_id = 1;
+  SLAState state = 2;
+  string first_response_due = 3;
+  string resolve_due = 4;
+  string warned_at = 5;
+  string breached_at = 6;
+  string policy = 7;
+}
+
+message GetSLARequest {
+  string ticket_id = 1;
+}
+
+message GetSLAResponse {
+  SLA sla = 1;
+}
