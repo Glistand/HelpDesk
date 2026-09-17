@@ -10,6 +10,7 @@ const kindMeta: Record<TimelineKind, { label: string; color: string }> = {
   sla_breach: { label: "Breach", color: "bg-status-red" },
   escalated: { label: "Escalated", color: "bg-status-red" },
   notification: { label: "Notify", color: "bg-accent/70" },
+  other: { label: "Event", color: "bg-tertiary" },
 };
 
 export function Timeline({ events }: { events: TimelineEvent[] }) {

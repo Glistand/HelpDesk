@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PriorityLabel, SlaBadge, StatusBadge } from "@/components/badges";
+import { StatusActions } from "@/components/status-actions";
 import { Timeline } from "@/components/timeline";
+import { ApiError, getTicketCard } from "@/lib/api";
 import { formatDateTime, formatRelative } from "@/lib/format";
-import { getTicket } from "@/lib/mock-data";
 
 export default async function TicketPage({
   params,
@@ -11,8 +12,13 @@ export default async function TicketPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const ticket = getTicket(id);
-  if (!ticket) notFound();
+  let ticket;
+  try {
+    ticket = await getTicketCard(id);
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) notFound();
+    throw e;
+  }
 
   return (
     <>
@@ -36,22 +42,12 @@ export default async function TicketPage({
               {ticket.title}
             </h1>
             <p className="text-[13px] text-tertiary">
-              {ticket.requester} · {ticket.category} · {formatRelative(ticket.updatedAt)}
+              {ticket.requester} · {ticket.category} ·{" "}
+              {formatRelative(ticket.updatedAt)}
             </p>
           </div>
           <div className="flex gap-2">
-            <button
-              type="button"
-              className="rounded-md px-3 py-1.5 text-[13px] text-tertiary ring-surface transition-colors hover:bg-elevated hover:text-secondary"
-            >
-              Комментарий
-            </button>
-            <button
-              type="button"
-              className="rounded-md bg-accent px-3 py-1.5 text-[13px] font-ui-medium text-white hover:opacity-90"
-            >
-              Статус
-            </button>
+            <StatusActions ticketId={ticket.id} current={ticket.status} />
           </div>
         </div>
       </header>
@@ -59,13 +55,17 @@ export default async function TicketPage({
       <div className="flex flex-1 overflow-hidden">
         <section className="flex-1 overflow-y-auto px-5 py-5 md:px-6">
           <Block title="Описание">
-            <p className="max-w-2xl text-[15px] leading-relaxed text-secondary">
-              {ticket.description}
+            <p className="max-w-2xl text-[15px] leading-relaxed text-secondary whitespace-pre-wrap">
+              {ticket.description || "—"}
             </p>
           </Block>
 
           <Block title="Activity">
-            <Timeline events={ticket.timeline} />
+            {ticket.timeline.length === 0 ? (
+              <p className="text-[13px] text-tertiary">Пока нет событий</p>
+            ) : (
+              <Timeline events={ticket.timeline} />
+            )}
           </Block>
         </section>
 

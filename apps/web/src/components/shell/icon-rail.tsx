@@ -104,12 +104,17 @@ export function IconRail() {
             </svg>
           )}
         </button>
-        <div
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-muted text-[11px] font-ui-semibold text-accent"
-          title="Алексей К."
+        <button
+          type="button"
+          title="Выйти"
+          onClick={async () => {
+            await fetch("/api/auth/logout", { method: "POST" });
+            window.location.href = "/login";
+          }}
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-muted text-[11px] font-ui-semibold text-accent transition-opacity hover:opacity-80"
         >
           АК
-        </div>
+        </button>
       </div>
     </nav>
   );

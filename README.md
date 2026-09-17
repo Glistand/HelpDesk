@@ -128,6 +128,7 @@ make up
 | `search-service` | 50057 | Meilisearch index + gRPC search |
 | `notification-service` | — | mock notify → `notification.sent` |
 | `api-gateway` | 8080 | HTTP → gRPC (card + search) |
+| `web` (Next.js) | 3001 | agent console → gateway (`GATEWAY_URL`) |
 
 JetStream streams создаются автоматически контейнером `nats-init`:
 
@@ -151,9 +152,14 @@ curl -s -X POST http://localhost:8080/tickets \
   -H 'Content-Type: application/json' \
   -d '{"title":"VPN down","description":"Cannot connect","priority":"high","category":"Network"}'
 
-# Phase 2+3+4 happy path
-make e2e          # assign/notify + SLA + search/card
-make e2e-phase4   # только search + BFF card
+# Phase 2–5 happy path
+make e2e          # assign/notify + SLA + search/card + Next.js BFF
+make e2e-phase5   # cookie login → create → card → search через web:3001
+
+# UI (dev, без Docker)
+cd apps/web && cp .env.example .env.local   # GATEWAY_URL=http://localhost:8080
+make web                                    # http://localhost:3001
+# seed: agent@helpdesk.local / password
 ```
 
 Остановка:
@@ -165,7 +171,7 @@ make reset     # удалить volumes
 
 ## Go monorepo
 
-Workspace: [`go.work`](go.work) включает libs, codegen и сервисы Фаз 0–4.
+Workspace: [`go.work`](go.work) включает libs, codegen и сервисы Фаз 0–4. UI — [`apps/web`](apps/web) (Next.js App Router).
 
 | Пакет | Назначение |
 |-------|------------|
@@ -181,6 +187,7 @@ Workspace: [`go.work`](go.work) включает libs, codegen и сервисы
 | [`services/escalation-service`](services/escalation-service) | breach → L2 |
 | [`services/search-service`](services/search-service) | Meilisearch indexer + search |
 | [`services/api-gateway`](services/api-gateway) | HTTP BFF (`/search`, `/tickets/{id}/card`) |
+| [`apps/web`](apps/web) | Next.js MVP: cookie `hd_token`, proxy `/api/hd/*`, inbox/card/create/search |
 
 ```bash
 make proto
@@ -202,7 +209,7 @@ Compose SLA defaults (override via `.env`): `SLA_FIRST_RESPONSE=5s`, `SLA_RESOLV
 | 2 | assignment, notification, audit — **done** |
 | 3 | SLA + escalation + DLQ (`helpdesk.dlq.>`) — **done** |
 | 4 | search + BFF aggregation по gRPC — **done** |
-| 5 | Next.js MVP (UI preview already in `apps/web`) |
+| 5 | Next.js MVP (live API, cookie auth, compose `web`) — **done** |
 | 6 | tracing, load/chaos, hardening |
 
 ## Принципы

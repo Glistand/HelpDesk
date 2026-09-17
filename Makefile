@@ -1,4 +1,4 @@
-.PHONY: up down logs ps reset nats-streams env web web-build proto build-libs build-services test-go e2e e2e-phase2 e2e-phase3 e2e-phase4
+.PHONY: up down logs ps reset nats-streams env web web-build proto build-libs build-services test-go e2e e2e-phase2 e2e-phase3 e2e-phase4 e2e-phase5
 
 COMPOSE_FILE := deploy/compose/docker-compose.yml
 ENV_FILE := .env
@@ -73,4 +73,7 @@ e2e-phase3:
 e2e-phase4:
 	./scripts/e2e-phase4.sh
 
-e2e: e2e-phase2 e2e-phase3 e2e-phase4
+e2e-phase5:
+	./scripts/e2e-phase5.sh
+
+e2e: e2e-phase2 e2e-phase3 e2e-phase4 e2e-phase5

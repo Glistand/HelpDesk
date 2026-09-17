@@ -19,6 +19,7 @@ const slaColors: Record<SlaState, string> = {
   ok: "bg-status-green",
   warning: "bg-status-amber",
   breached: "bg-status-red",
+  cancelled: "bg-tertiary",
 };
 
 export function PriorityDot({ priority }: { priority: TicketPriority }) {
@@ -31,7 +32,7 @@ export function PriorityDot({ priority }: { priority: TicketPriority }) {
 }
 
 export function SlaDot({ state }: { state: SlaState }) {
-  if (state === "ok") return null;
+  if (state === "ok" || state === "cancelled") return null;
   return (
     <span
       className={`h-1.5 w-1.5 rounded-full ${slaColors[state]} ${
@@ -55,6 +56,7 @@ export function SlaBadge({ state }: { state: SlaState }) {
     ok: "SLA OK",
     warning: "SLA · скоро",
     breached: "SLA · breach",
+    cancelled: "SLA · off",
   };
   return (
     <span
@@ -63,7 +65,9 @@ export function SlaBadge({ state }: { state: SlaState }) {
           ? "bg-status-red/10 text-status-red"
           : state === "warning"
             ? "bg-status-amber/10 text-status-amber"
-            : "bg-status-green/10 text-status-green"
+            : state === "cancelled"
+              ? "bg-elevated text-tertiary"
+              : "bg-status-green/10 text-status-green"
       }`}
     >
       <span className={`h-1.5 w-1.5 rounded-full ${slaColors[state]}`} />

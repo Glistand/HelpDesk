@@ -7,7 +7,7 @@ export type TicketStatus =
 
 export type TicketPriority = "low" | "normal" | "high" | "urgent";
 
-export type SlaState = "ok" | "warning" | "breached";
+export type SlaState = "ok" | "warning" | "breached" | "cancelled";
 
 export type TimelineKind =
   | "created"
@@ -17,7 +17,8 @@ export type TimelineKind =
   | "sla_warn"
   | "sla_breach"
   | "escalated"
-  | "notification";
+  | "notification"
+  | "other";
 
 export interface Agent {
   id: string;
@@ -35,6 +36,15 @@ export interface TimelineEvent {
   at: string;
 }
 
+export interface TicketSLA {
+  firstResponseDue: string;
+  resolveDue: string;
+  state: SlaState;
+  warnedAt?: string;
+  breachedAt?: string;
+  policy?: string;
+}
+
 export interface Ticket {
   id: string;
   title: string;
@@ -46,10 +56,27 @@ export interface Ticket {
   assignee?: Agent;
   createdAt: string;
   updatedAt: string;
-  sla: {
-    firstResponseDue: string;
-    resolveDue: string;
-    state: SlaState;
-  };
+  sla: TicketSLA;
   timeline: TimelineEvent[];
+}
+
+export interface TicketSummary {
+  id: string;
+  title: string;
+  status: TicketStatus;
+  priority: TicketPriority;
+  category: string;
+  requester: string;
+  assigneeId: string;
+  assignee?: Agent;
+  createdAt: string;
+  updatedAt: string;
+  slaState: SlaState;
+}
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
 }

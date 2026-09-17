@@ -279,6 +279,21 @@ services:
       - "${GATEWAY_HTTP_PORT:-8080}:8080"
     restart: unless-stopped
 
+  web:
+    build:
+      context: ../../apps/web
+      dockerfile: Dockerfile
+    container_name: helpdesk-web
+    depends_on:
+      - api-gateway
+    environment:
+      GATEWAY_URL: http://api-gateway:8080
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+    ports:
+      - "${WEB_PORT:-3001}:3000"
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   redis_data:

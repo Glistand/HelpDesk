@@ -10,7 +10,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Helpdesk Event Hub",
-  description: "Presentation UI — styling preview",
+  description: "Agent console for Helpdesk Event Hub",
 };
 
 const themeInitScript = `
