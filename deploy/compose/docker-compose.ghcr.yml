@@ -1,0 +1,67 @@
+# Override: pull prebuilt images from GitHub Container Registry instead of building locally.
+#
+#   export GHCR_OWNER=glistand   # lowercase GitHub org/user
+#   export IMAGE_TAG=latest     # or sha-abc1234 / v1.0.0
+#   docker compose --env-file .env \
+#     -f deploy/compose/docker-compose.yml \
+#     -f deploy/compose/docker-compose.ghcr.yml \
+#     up -d
+#
+# Login once (public packages may skip this):
+#   echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
+
+name: helpdesk
+
+x-pull: &pull
+  pull_policy: always
+
+services:
+  auth-service:
+    <<: *pull
+    image: ghcr.io/${GHCR_OWNER:-glistand}/helpdesk-auth-service:${IMAGE_TAG:-latest}
+    build: !reset null
+
+  ticket-service:
+    <<: *pull
+    image: ghcr.io/${GHCR_OWNER:-glistand}/helpdesk-ticket-service:${IMAGE_TAG:-latest}
+    build: !reset null
+
+  assignment-service:
+    <<: *pull
+    image: ghcr.io/${GHCR_OWNER:-glistand}/helpdesk-assignment-service:${IMAGE_TAG:-latest}
+    build: !reset null
+
+  notification-service:
+    <<: *pull
+    image: ghcr.io/${GHCR_OWNER:-glistand}/helpdesk-notification-service:${IMAGE_TAG:-latest}
+    build: !reset null
+
+  audit-service:
+    <<: *pull
+    image: ghcr.io/${GHCR_OWNER:-glistand}/helpdesk-audit-service:${IMAGE_TAG:-latest}
+    build: !reset null
+
+  sla-service:
+    <<: *pull
+    image: ghcr.io/${GHCR_OWNER:-glistand}/helpdesk-sla-service:${IMAGE_TAG:-latest}
+    build: !reset null
+
+  escalation-service:
+    <<: *pull
+    image: ghcr.io/${GHCR_OWNER:-glistand}/helpdesk-escalation-service:${IMAGE_TAG:-latest}
+    build: !reset null
+
+  search-service:
+    <<: *pull
+    image: ghcr.io/${GHCR_OWNER:-glistand}/helpdesk-search-service:${IMAGE_TAG:-latest}
+    build: !reset null
+
+  api-gateway:
+    <<: *pull
+    image: ghcr.io/${GHCR_OWNER:-glistand}/helpdesk-api-gateway:${IMAGE_TAG:-latest}
+    build: !reset null
+
+  web:
+    <<: *pull
+    image: ghcr.io/${GHCR_OWNER:-glistand}/helpdesk-web:${IMAGE_TAG:-latest}
+    build: !reset null

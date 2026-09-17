@@ -172,6 +172,31 @@ make down      # сохранить данные
 make reset     # удалить volumes
 ```
 
+## CI: Docker → GHCR
+
+Workflow [`.github/workflows/docker-publish.yml`](.github/workflows/docker-publish.yml) на каждый push в `main` / тег `v*` / `workflow_dispatch` собирает все сервисы и `web`, пушит в GitHub Container Registry:
+
+| Image | Пример |
+|-------|--------|
+| `ghcr.io/<owner>/helpdesk-api-gateway` | `:latest`, `:sha-<short>`, `:v1.2.3` |
+| `ghcr.io/<owner>/helpdesk-web` | то же |
+| … | все `*-service` из матрицы |
+
+На PR образы только **собираются** (без push).
+
+После первого успешного run:
+
+1. GitHub → **Packages** у репозитория — появятся `helpdesk-*`
+2. Для private package: Settings → Package → Manage Actions access (репо уже связано через `GITHUB_TOKEN`)
+3. Локально (если пакеты private):
+
+```bash
+echo $GITHUB_TOKEN | docker login ghcr.io -u YOUR_GITHUB_USER --password-stdin
+GHCR_OWNER=glistand IMAGE_TAG=latest make up-ghcr
+```
+
+`make up-ghcr` тянет образы через [`deploy/compose/docker-compose.ghcr.yml`](deploy/compose/docker-compose.ghcr.yml) и поднимает стек без локальной сборки.
+
 ## Go monorepo
 
 Workspace: [`go.work`](go.work) включает libs, codegen и сервисы Фаз 0–4. UI — [`apps/web`](apps/web) (Next.js App Router).

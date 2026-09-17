@@ -1,10 +1,17 @@
-.PHONY: up down logs ps reset nats-streams env web web-build proto build-libs build-services test-go e2e e2e-phase2 e2e-phase3 e2e-phase4 e2e-phase5 e2e-phase6 load-phase6 chaos-phase6
+.PHONY: up up-ghcr down logs ps reset nats-streams env web web-build proto build-libs build-services test-go e2e e2e-phase2 e2e-phase3 e2e-phase4 e2e-phase5 e2e-phase6 load-phase6 chaos-phase6
 
 COMPOSE_FILE := deploy/compose/docker-compose.yml
+COMPOSE_GHCR_FILE := deploy/compose/docker-compose.ghcr.yml
 ENV_FILE := .env
 
 up: env
 	docker compose --env-file $(ENV_FILE) -f $(COMPOSE_FILE) up -d --build
+
+# Pull prebuilt images from ghcr.io (see docker-compose.ghcr.yml).
+# IMAGE_TAG=sha-abc1234 GHCR_OWNER=glistand make up-ghcr
+up-ghcr: env
+	docker compose --env-file $(ENV_FILE) -f $(COMPOSE_FILE) -f $(COMPOSE_GHCR_FILE) pull
+	docker compose --env-file $(ENV_FILE) -f $(COMPOSE_FILE) -f $(COMPOSE_GHCR_FILE) up -d --no-build
 
 down:
 	docker compose --env-file $(ENV_FILE) -f $(COMPOSE_FILE) down
