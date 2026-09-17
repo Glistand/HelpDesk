@@ -10,6 +10,7 @@ import (
 
 	authv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/auth/v1"
 	"github.com/Glistand/HelpDesk/libs/grpckit"
+	"github.com/Glistand/HelpDesk/libs/otelkit"
 	"github.com/Glistand/HelpDesk/services/auth-service/internal/config"
 	"github.com/Glistand/HelpDesk/services/auth-service/internal/grpcserver"
 	"github.com/Glistand/HelpDesk/services/auth-service/internal/store"
@@ -24,6 +25,13 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
+	otelShutdown, err := otelkit.Init(ctx, "auth-service")
+	if err != nil {
+		logger.Error("otel init failed", "error", err)
+		os.Exit(1)
+	}
+	defer func() { _ = otelShutdown(context.Background()) }()
+
 	users := store.NewWithSeed()
 	issuer := tokens.NewIssuer(cfg.JWTSecret, cfg.TokenTTL)
 
@@ -33,7 +41,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	srv := grpc.NewServer(grpckit.DefaultUnaryServerInterceptors(logger))
+	srv := grpc.NewServer(grpckit.DefaultServerOptions(logger)...)
 	authv1.RegisterAuthServiceServer(srv, grpcserver.New(users, issuer))
 
 	go func() {

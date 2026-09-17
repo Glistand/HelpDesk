@@ -11,6 +11,7 @@ import (
 	slav1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/sla/v1"
 	"github.com/Glistand/HelpDesk/libs/eventkit/natsx"
 	"github.com/Glistand/HelpDesk/libs/grpckit"
+	"github.com/Glistand/HelpDesk/libs/otelkit"
 	"github.com/Glistand/HelpDesk/services/sla-service/internal/config"
 	"github.com/Glistand/HelpDesk/services/sla-service/internal/consumer"
 	"github.com/Glistand/HelpDesk/services/sla-service/internal/db"
@@ -28,6 +29,13 @@ func main() {
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
+	otelShutdown, err := otelkit.Init(ctx, "sla-service")
+	if err != nil {
+		logger.Error("otel init failed", "error", err)
+		os.Exit(1)
+	}
+	defer func() { _ = otelShutdown(context.Background()) }()
 
 	sqlDB, err := db.Open(ctx, cfg.DatabaseURL)
 	if err != nil {
@@ -84,7 +92,7 @@ func main() {
 		logger.Error("listen failed", "error", err)
 		os.Exit(1)
 	}
-	srv := grpc.NewServer(grpckit.DefaultUnaryServerInterceptors(logger))
+	srv := grpc.NewServer(grpckit.DefaultServerOptions(logger)...)
 	slav1.RegisterSLAServiceServer(srv, grpcserver.New(repo))
 
 	go func() {

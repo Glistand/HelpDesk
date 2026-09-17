@@ -129,6 +129,7 @@ make up
 | `notification-service` | — | mock notify → `notification.sent` |
 | `api-gateway` | 8080 | HTTP → gRPC (card + search) |
 | `web` (Next.js) | 3001 | agent console → gateway (`GATEWAY_URL`) |
+| Jaeger UI | 16686 | traces (OTLP `:4318`) |
 
 JetStream streams создаются автоматически контейнером `nats-init`:
 
@@ -152,9 +153,11 @@ curl -s -X POST http://localhost:8080/tickets \
   -H 'Content-Type: application/json' \
   -d '{"title":"VPN down","description":"Cannot connect","priority":"high","category":"Network"}'
 
-# Phase 2–5 happy path
-make e2e          # assign/notify + SLA + search/card + Next.js BFF
-make e2e-phase5   # cookie login → create → card → search через web:3001
+# Phase 2–6 happy path
+make e2e          # assign/notify + SLA + search/card + Next.js BFF + tracing/hardening
+make e2e-phase6   # headers/auth + Jaeger traces + load + chaos restart
+make load-phase6  # concurrent creates
+make chaos-phase6 # bounce assignment-service
 
 # UI (dev, без Docker)
 cd apps/web && cp .env.example .env.local   # GATEWAY_URL=http://localhost:8080
@@ -176,8 +179,9 @@ Workspace: [`go.work`](go.work) включает libs, codegen и сервисы
 | Пакет | Назначение |
 |-------|------------|
 | [`api/proto`](api/proto) | `.proto` + `buf` codegen → [`api/gen/go`](api/gen/go) |
-| [`libs/grpckit`](libs/grpckit) | gRPC interceptors, metadata, errors |
-| [`libs/eventkit`](libs/eventkit) | NATS JetStream envelope / publish / subscribe / DLQ |
+| [`libs/grpckit`](libs/grpckit) | gRPC interceptors, metadata, errors, OTel stats |
+| [`libs/eventkit`](libs/eventkit) | NATS JetStream envelope / publish / subscribe / DLQ + consume spans |
+| [`libs/otelkit`](libs/otelkit) | OTLP/HTTP tracer bootstrap |
 | [`services/auth-service`](services/auth-service) | Login / ValidateToken (JWT) |
 | [`services/ticket-service`](services/ticket-service) | CRUD + transactional outbox |
 | [`services/assignment-service`](services/assignment-service) | consume created → AssignTicket |
@@ -210,7 +214,7 @@ Compose SLA defaults (override via `.env`): `SLA_FIRST_RESPONSE=5s`, `SLA_RESOLV
 | 3 | SLA + escalation + DLQ (`helpdesk.dlq.>`) — **done** |
 | 4 | search + BFF aggregation по gRPC — **done** |
 | 5 | Next.js MVP (live API, cookie auth, compose `web`) — **done** |
-| 6 | tracing, load/chaos, hardening |
+| 6 | tracing (gRPC + NATS + Jaeger), load/chaos, hardening — **done** |
 
 ## Принципы
 

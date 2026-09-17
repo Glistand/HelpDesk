@@ -81,10 +81,14 @@ func Subscribe(ctx context.Context, js jetstream.JetStream, cfg SubscriberConfig
 					delivered = meta.NumDelivered
 				}
 
-				if err := handler(ctx, ev); err != nil {
+				hctx, span := startConsumeSpan(ctx, ev, msg.Subject())
+				err = handler(hctx, ev)
+				endConsumeSpan(span, err)
+				if err != nil {
 					cfg.Logger.Error("handler failed",
 						"type", ev.Type,
 						"event_id", ev.EventID,
+						"correlation_id", ev.CorrelationID,
 						"delivered", delivered,
 						"max_deliver", maxDeliver,
 						"error", err,

@@ -1,4 +1,4 @@
-.PHONY: up down logs ps reset nats-streams env web web-build proto build-libs build-services test-go e2e e2e-phase2 e2e-phase3 e2e-phase4 e2e-phase5
+.PHONY: up down logs ps reset nats-streams env web web-build proto build-libs build-services test-go e2e e2e-phase2 e2e-phase3 e2e-phase4 e2e-phase5 e2e-phase6 load-phase6 chaos-phase6
 
 COMPOSE_FILE := deploy/compose/docker-compose.yml
 ENV_FILE := .env
@@ -38,6 +38,7 @@ proto:
 build-libs:
 	go build github.com/Glistand/HelpDesk/libs/eventkit/... \
 		github.com/Glistand/HelpDesk/libs/grpckit/... \
+		github.com/Glistand/HelpDesk/libs/otelkit/... \
 		github.com/Glistand/HelpDesk/api/gen/go/...
 
 build-services: build-libs
@@ -54,6 +55,7 @@ build-services: build-libs
 test-go:
 	go test github.com/Glistand/HelpDesk/libs/eventkit/... \
 		github.com/Glistand/HelpDesk/libs/grpckit/... \
+		github.com/Glistand/HelpDesk/libs/otelkit/... \
 		github.com/Glistand/HelpDesk/services/ticket-service/... \
 		github.com/Glistand/HelpDesk/services/auth-service/... \
 		github.com/Glistand/HelpDesk/services/assignment-service/... \
@@ -76,4 +78,13 @@ e2e-phase4:
 e2e-phase5:
 	./scripts/e2e-phase5.sh
 
-e2e: e2e-phase2 e2e-phase3 e2e-phase4 e2e-phase5
+e2e-phase6:
+	./scripts/e2e-phase6.sh
+
+load-phase6:
+	./scripts/load-phase6.sh
+
+chaos-phase6:
+	./scripts/chaos-phase6.sh
+
+e2e: e2e-phase2 e2e-phase3 e2e-phase4 e2e-phase5 e2e-phase6

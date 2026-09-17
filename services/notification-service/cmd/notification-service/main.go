@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/Glistand/HelpDesk/libs/eventkit/natsx"
+	"github.com/Glistand/HelpDesk/libs/otelkit"
 	"github.com/Glistand/HelpDesk/services/notification-service/internal/config"
 	"github.com/Glistand/HelpDesk/services/notification-service/internal/consumer"
 	"github.com/Glistand/HelpDesk/services/notification-service/internal/db"
@@ -20,6 +21,13 @@ func main() {
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
+	otelShutdown, err := otelkit.Init(ctx, "notification-service")
+	if err != nil {
+		logger.Error("otel init failed", "error", err)
+		os.Exit(1)
+	}
+	defer func() { _ = otelShutdown(context.Background()) }()
 
 	sqlDB, err := db.Open(ctx, cfg.DatabaseURL)
 	if err != nil {

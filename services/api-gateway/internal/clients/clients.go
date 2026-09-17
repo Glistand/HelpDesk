@@ -26,10 +26,8 @@ type Clients struct {
 
 func Dial(ctx context.Context, authAddr, ticketAddr, assignmentAddr, auditAddr, slaAddr, searchAddr string) (*Clients, error) {
 	dial := func(addr string) (*grpc.ClientConn, error) {
-		return grpc.NewClient(addr,
-			grpc.WithTransportCredentials(insecure.NewCredentials()),
-			grpckit.DefaultUnaryClientInterceptors(),
-		)
+		opts := append([]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}, grpckit.DefaultClientOptions()...)
+		return grpc.NewClient(addr, opts...)
 	}
 
 	addrs := []string{authAddr, ticketAddr, assignmentAddr, auditAddr, slaAddr, searchAddr}

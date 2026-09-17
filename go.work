@@ -4,6 +4,7 @@ use (
 	./api/gen/go
 	./libs/eventkit
 	./libs/grpckit
+	./libs/otelkit
 	./services/api-gateway
 	./services/assignment-service
 	./services/audit-service

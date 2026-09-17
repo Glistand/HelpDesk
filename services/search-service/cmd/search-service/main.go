@@ -13,6 +13,7 @@ import (
 	ticketv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/ticket/v1"
 	"github.com/Glistand/HelpDesk/libs/eventkit/natsx"
 	"github.com/Glistand/HelpDesk/libs/grpckit"
+	"github.com/Glistand/HelpDesk/libs/otelkit"
 	"github.com/Glistand/HelpDesk/services/search-service/internal/config"
 	"github.com/Glistand/HelpDesk/services/search-service/internal/consumer"
 	"github.com/Glistand/HelpDesk/services/search-service/internal/grpcserver"
@@ -27,6 +28,13 @@ func main() {
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
+	otelShutdown, err := otelkit.Init(ctx, "search-service")
+	if err != nil {
+		logger.Error("otel init failed", "error", err)
+		os.Exit(1)
+	}
+	defer func() { _ = otelShutdown(context.Background()) }()
 
 	idx, err := index.New(cfg.MeiliHost, cfg.MeiliAPIKey, cfg.MeiliIndex)
 	if err != nil {
@@ -46,10 +54,8 @@ func main() {
 	}
 	defer nc.Close()
 
-	ticketConn, err := grpc.NewClient(cfg.TicketGRPCAddr,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpckit.DefaultUnaryClientInterceptors(),
-	)
+	clientOpts := append([]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}, grpckit.DefaultClientOptions()...)
+	ticketConn, err := grpc.NewClient(cfg.TicketGRPCAddr, clientOpts...)
 	if err != nil {
 		logger.Error("ticket dial failed", "error", err)
 		os.Exit(1)
@@ -67,7 +73,7 @@ func main() {
 		logger.Error("listen failed", "error", err)
 		os.Exit(1)
 	}
-	srv := grpc.NewServer(grpckit.DefaultUnaryServerInterceptors(logger))
+	srv := grpc.NewServer(grpckit.DefaultServerOptions(logger)...)
 	searchv1.RegisterSearchServiceServer(srv, grpcserver.New(idx))
 
 	go func() {

@@ -11,6 +11,7 @@ import (
 	auditv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/audit/v1"
 	"github.com/Glistand/HelpDesk/libs/eventkit/natsx"
 	"github.com/Glistand/HelpDesk/libs/grpckit"
+	"github.com/Glistand/HelpDesk/libs/otelkit"
 	"github.com/Glistand/HelpDesk/services/audit-service/internal/config"
 	"github.com/Glistand/HelpDesk/services/audit-service/internal/consumer"
 	"github.com/Glistand/HelpDesk/services/audit-service/internal/db"
@@ -25,6 +26,13 @@ func main() {
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
+	otelShutdown, err := otelkit.Init(ctx, "audit-service")
+	if err != nil {
+		logger.Error("otel init failed", "error", err)
+		os.Exit(1)
+	}
+	defer func() { _ = otelShutdown(context.Background()) }()
 
 	sqlDB, err := db.Open(ctx, cfg.DatabaseURL)
 	if err != nil {
@@ -59,7 +67,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	srv := grpc.NewServer(grpckit.DefaultUnaryServerInterceptors(logger))
+	srv := grpc.NewServer(grpckit.DefaultServerOptions(logger)...)
 	auditv1.RegisterAuditServiceServer(srv, grpcserver.New(repo))
 
 	go func() {

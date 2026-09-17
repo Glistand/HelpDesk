@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Glistand/HelpDesk/libs/otelkit"
 	"github.com/Glistand/HelpDesk/services/api-gateway/internal/clients"
 	"github.com/Glistand/HelpDesk/services/api-gateway/internal/config"
 	"github.com/Glistand/HelpDesk/services/api-gateway/internal/handlers"
@@ -21,6 +22,13 @@ func main() {
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
+	otelShutdown, err := otelkit.Init(ctx, "api-gateway")
+	if err != nil {
+		logger.Error("otel init failed", "error", err)
+		os.Exit(1)
+	}
+	defer func() { _ = otelShutdown(context.Background()) }()
 
 	c, err := clients.Dial(ctx, cfg.AuthGRPCAddr, cfg.TicketGRPCAddr, cfg.AssignmentGRPCAddr, cfg.AuditGRPCAddr, cfg.SLAGRPCAddr, cfg.SearchGRPCAddr)
 	if err != nil {
@@ -44,10 +52,25 @@ func main() {
 	mux.Handle("PATCH /tickets/{id}/status", auth(http.HandlerFunc(api.UpdateTicketStatus)))
 	mux.Handle("GET /search", auth(http.HandlerFunc(api.SearchTickets)))
 
+	handler := middleware.Chain(mux,
+		middleware.SecureHeaders,
+		middleware.MaxBody(1<<20),
+		middleware.RateLimit(100, 200),
+		middleware.Timeout(15*time.Second),
+		middleware.Correlation,
+		middleware.AccessLog(logger),
+		withCORS,
+	)
+	handler = middleware.WithOTel("api-gateway", handler)
+
 	srv := &http.Server{
 		Addr:              cfg.HTTPAddr,
-		Handler:           withCORS(mux),
+		Handler:           handler,
 		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
+		MaxHeaderBytes:    1 << 20,
 	}
 
 	go func() {
@@ -67,8 +90,9 @@ func main() {
 func withCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Correlation-Id, X-Request-Id")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS")
+		w.Header().Set("Access-Control-Expose-Headers", "X-Correlation-Id, X-Request-Id")
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
 			return

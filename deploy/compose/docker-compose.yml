@@ -83,6 +83,20 @@ services:
       retries: 20
       start_period: 10s
 
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    container_name: helpdesk-jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "${JAEGER_UI_PORT:-16686}:16686"
+      - "${OTEL_HTTP_PORT:-4318}:4318"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:16686/ || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
   auth-service:
     build:
       context: ../..
@@ -91,6 +105,8 @@ services:
     environment:
       AUTH_GRPC_ADDR: ":50051"
       JWT_SECRET: ${JWT_SECRET:-helpdesk-dev-secret-change-me}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      OTEL_SERVICE_NAME: auth-service
     ports:
       - "${AUTH_GRPC_PORT:-50051}:50051"
     restart: unless-stopped
@@ -112,6 +128,8 @@ services:
       TICKET_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/ticket?sslmode=disable
       NATS_URL: nats://nats:4222
       OUTBOX_POLL_INTERVAL: 500ms
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      OTEL_SERVICE_NAME: ticket-service
     ports:
       - "${TICKET_GRPC_PORT:-50052}:50052"
     restart: unless-stopped
@@ -135,6 +153,8 @@ services:
       ASSIGNMENT_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/assignment?sslmode=disable
       TICKET_GRPC_ADDR: ticket-service:50052
       NATS_URL: nats://nats:4222
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      OTEL_SERVICE_NAME: assignment-service
     ports:
       - "${ASSIGNMENT_GRPC_PORT:-50053}:50053"
     restart: unless-stopped
@@ -154,6 +174,8 @@ services:
     environment:
       NOTIFICATION_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/notification?sslmode=disable
       NATS_URL: nats://nats:4222
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      OTEL_SERVICE_NAME: notification-service
     restart: unless-stopped
 
   audit-service:
@@ -172,6 +194,8 @@ services:
       AUDIT_GRPC_ADDR: ":50054"
       AUDIT_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/audit?sslmode=disable
       NATS_URL: nats://nats:4222
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      OTEL_SERVICE_NAME: audit-service
     ports:
       - "${AUDIT_GRPC_PORT:-50054}:50054"
     restart: unless-stopped
@@ -200,6 +224,8 @@ services:
       SLA_RESOLVE: ${SLA_RESOLVE:-30s}
       SLA_WARN_RATIO: ${SLA_WARN_RATIO:-0.5}
       SLA_POLL_INTERVAL: 200ms
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      OTEL_SERVICE_NAME: sla-service
     ports:
       - "${SLA_GRPC_PORT:-50055}:50055"
     restart: unless-stopped
@@ -226,6 +252,8 @@ services:
       TICKET_GRPC_ADDR: ticket-service:50052
       NATS_URL: nats://nats:4222
       ESCALATION_L2_ASSIGNEE: a-3
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      OTEL_SERVICE_NAME: escalation-service
     ports:
       - "${ESCALATION_GRPC_PORT:-50056}:50056"
     restart: unless-stopped
@@ -251,6 +279,8 @@ services:
       MEILI_HOST: http://meilisearch:7700
       MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
       MEILI_INDEX: tickets
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      OTEL_SERVICE_NAME: search-service
     ports:
       - "${SEARCH_GRPC_PORT:-50057}:50057"
     restart: unless-stopped
@@ -275,6 +305,8 @@ services:
       AUDIT_GRPC_ADDR: audit-service:50054
       SLA_GRPC_ADDR: sla-service:50055
       SEARCH_GRPC_ADDR: search-service:50057
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      OTEL_SERVICE_NAME: api-gateway
     ports:
       - "${GATEWAY_HTTP_PORT:-8080}:8080"
     restart: unless-stopped
