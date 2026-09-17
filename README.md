@@ -199,12 +199,12 @@ GHCR_OWNER=glistand IMAGE_TAG=latest make up-ghcr
 
 ### Деплой на сервер
 
-Готовый стек с **двумя** опубликованными портами (UI + API): [`deploy/server/`](deploy/server/).
+Два файла — [`deploy/server/docker-compose.yml`](deploy/server/docker-compose.yml) + [`deploy/server/.env`](deploy/server/.env). Репозиторий на сервере не нужен.
 
 ```bash
-cp deploy/server/.env.example deploy/server/.env   # смените секреты
-make up-server
-# UI  :80   API :8080
+# скопируйте оба файла в каталог на сервере, затем:
+docker compose --env-file .env up -d
+# UI :80   API :8080
 ```
 
 Подробности — [`deploy/server/README.md`](deploy/server/README.md).

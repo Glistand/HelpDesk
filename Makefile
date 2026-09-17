@@ -15,9 +15,8 @@ up-ghcr: env
 	docker compose --env-file $(ENV_FILE) -f $(COMPOSE_FILE) -f $(COMPOSE_GHCR_FILE) pull
 	docker compose --env-file $(ENV_FILE) -f $(COMPOSE_FILE) -f $(COMPOSE_GHCR_FILE) up -d --no-build
 
-# Server-oriented stack: GHCR images, only WEB_PORT + GATEWAY_PORT published.
+# Server-oriented stack: 2 files in deploy/server/ (docker-compose.yml + .env).
 up-server:
-	@test -f $(SERVER_ENV_FILE) || cp deploy/server/.env.example $(SERVER_ENV_FILE)
 	docker compose --env-file $(SERVER_ENV_FILE) -f $(COMPOSE_SERVER_FILE) pull
 	docker compose --env-file $(SERVER_ENV_FILE) -f $(COMPOSE_SERVER_FILE) up -d
 

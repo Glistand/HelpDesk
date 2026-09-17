@@ -102,6 +102,7 @@ go.work.sum
 
 # env file
 .env
+!deploy/server/.env
 
 bin/
 

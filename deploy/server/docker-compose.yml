@@ -1,59 +1,70 @@
-# HelpDesk — server stack (GHCR images, minimal published ports)
+# HelpDesk — standalone server stack (ONLY these 2 files needed: this + .env)
 #
-# Outside (host):
-#   WEB_PORT      → Next.js UI  (default 80)
-#   GATEWAY_PORT  → HTTP API    (default 8080)
+#   docker login ghcr.io -u USER --password-stdin   # if packages are private
+#   docker compose --env-file .env up -d
 #
-# Everything else stays on the internal Docker network only.
-#
-# Usage on the server (from repo root or this directory):
-#   cp deploy/server/.env.example deploy/server/.env
-#   # edit JWT_SECRET, POSTGRES_PASSWORD, MEILI_MASTER_KEY
-#   echo "$GITHUB_TOKEN" | docker login ghcr.io -u YOUR_USER --password-stdin
-#   docker compose --env-file deploy/server/.env -f deploy/server/docker-compose.yml pull
-#   docker compose --env-file deploy/server/.env -f deploy/server/docker-compose.yml up -d
-#
-# UI:  http://SERVER:80
-# API: http://SERVER:8080/healthz
-# Seed: agent@helpdesk.local / password
+# Public ports: WEB_PORT (UI), GATEWAY_PORT (API). Nothing else is published.
+# Login: agent@helpdesk.local / password
 
 name: helpdesk
 
-x-app-image: &app-image
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-app: &app
   pull_policy: ${PULL_POLICY:-always}
   restart: unless-stopped
-  logging:
-    driver: json-file
-    options:
-      max-size: "10m"
-      max-file: "3"
+  logging: *default-logging
 
 services:
   postgres:
     image: postgres:17-alpine
-    container_name: helpdesk-postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ../compose/init/postgres:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
-      retries: 20
+      retries: 30
     restart: unless-stopped
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
+    logging: *default-logging
+
+  # Creates per-service databases (idempotent). No host files required.
+  postgres-init:
+    image: postgres:17-alpine
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -eu
+        for db in auth ticket assignment sla escalation notification audit; do
+          exists=$$(psql -tAc "SELECT 1 FROM pg_database WHERE datname='$$db'")
+          if [ "$$exists" != "1" ]; then
+            echo "Creating database $$db"
+            psql -v ON_ERROR_STOP=1 -c "CREATE DATABASE $$db;"
+          else
+            echo "Database $$db already exists"
+          fi
+        done
+        echo "Postgres databases ready"
+    restart: "no"
 
   redis:
     image: redis:7-alpine
-    container_name: helpdesk-redis
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - redis_data:/data
@@ -61,17 +72,12 @@ services:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
-      retries: 20
+      retries: 30
     restart: unless-stopped
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
+    logging: *default-logging
 
   nats:
     image: nats:2.11-alpine
-    container_name: helpdesk-nats
     command: ["-js", "-m", "8222", "-sd", "/data"]
     volumes:
       - nats_data:/data
@@ -79,30 +85,47 @@ services:
       test: ["CMD", "wget", "-qO-", "http://localhost:8222/healthz"]
       interval: 5s
       timeout: 3s
-      retries: 20
+      retries: 30
     restart: unless-stopped
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
+    logging: *default-logging
 
+  # Creates JetStream streams (idempotent). Script is inline — no host files.
   nats-init:
     image: natsio/nats-box:0.18.0
-    container_name: helpdesk-nats-init
     depends_on:
       nats:
         condition: service_healthy
     environment:
       NATS_URL: nats://nats:4222
-    volumes:
-      - ../compose/init/nats:/scripts:ro
-    entrypoint: ["/bin/sh", "/scripts/setup-streams.sh"]
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -eu
+        echo "Waiting for NATS at $$NATS_URL..."
+        until nats --server "$$NATS_URL" server check connection >/dev/null 2>&1; do sleep 1; done
+        if ! nats --server "$$NATS_URL" stream info HELP_DESK_EVENTS >/dev/null 2>&1; then
+          nats --server "$$NATS_URL" stream add HELP_DESK_EVENTS \
+            --subjects "helpdesk.ticket.>" \
+            --subjects "helpdesk.sla.>" \
+            --subjects "helpdesk.assignment.>" \
+            --subjects "helpdesk.notification.>" \
+            --subjects "helpdesk.audit.>" \
+            --storage file --retention limits --max-msgs=-1 --max-age=720h --dupe-window=2m --defaults
+        else
+          echo "HELP_DESK_EVENTS exists"
+        fi
+        if ! nats --server "$$NATS_URL" stream info HELP_DESK_DLQ >/dev/null 2>&1; then
+          nats --server "$$NATS_URL" stream add HELP_DESK_DLQ \
+            --subjects "helpdesk.dlq.>" \
+            --storage file --retention limits --max-msgs=-1 --max-age=168h --defaults
+        else
+          echo "HELP_DESK_DLQ exists"
+        fi
+        nats --server "$$NATS_URL" stream ls
     restart: "no"
 
   meilisearch:
     image: getmeili/meilisearch:v1.14
-    container_name: helpdesk-meilisearch
     environment:
       MEILI_ENV: ${MEILI_ENV:-production}
       MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
@@ -112,40 +135,28 @@ services:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:7700/health || exit 1"]
       interval: 5s
       timeout: 3s
-      retries: 30
+      retries: 40
       start_period: 15s
     restart: unless-stopped
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
+    logging: *default-logging
 
   jaeger:
     image: jaegertracing/all-in-one:1.57
-    container_name: helpdesk-jaeger
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
-    # No host ports: OTLP only inside the Docker network (jaeger:4318).
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:16686/ || exit 1"]
       interval: 5s
       timeout: 3s
-      retries: 30
+      retries: 40
     restart: unless-stopped
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
+    logging: *default-logging
 
   auth-service:
-    <<: *app-image
+    <<: *app
     image: ghcr.io/${GHCR_OWNER}/helpdesk-auth-service:${IMAGE_TAG}
-    container_name: helpdesk-auth
     depends_on:
-      jaeger:
-        condition: service_started
+      - jaeger
     environment:
       AUTH_GRPC_ADDR: ":50051"
       JWT_SECRET: ${JWT_SECRET}
@@ -153,14 +164,11 @@ services:
       OTEL_SERVICE_NAME: auth-service
 
   ticket-service:
-    <<: *app-image
+    <<: *app
     image: ghcr.io/${GHCR_OWNER}/helpdesk-ticket-service:${IMAGE_TAG}
-    container_name: helpdesk-ticket
     depends_on:
-      postgres:
-        condition: service_healthy
-      nats:
-        condition: service_healthy
+      postgres-init:
+        condition: service_completed_successfully
       nats-init:
         condition: service_completed_successfully
       jaeger:
@@ -174,14 +182,11 @@ services:
       OTEL_SERVICE_NAME: ticket-service
 
   assignment-service:
-    <<: *app-image
+    <<: *app
     image: ghcr.io/${GHCR_OWNER}/helpdesk-assignment-service:${IMAGE_TAG}
-    container_name: helpdesk-assignment
     depends_on:
-      postgres:
-        condition: service_healthy
-      nats:
-        condition: service_healthy
+      postgres-init:
+        condition: service_completed_successfully
       nats-init:
         condition: service_completed_successfully
       ticket-service:
@@ -195,14 +200,11 @@ services:
       OTEL_SERVICE_NAME: assignment-service
 
   notification-service:
-    <<: *app-image
+    <<: *app
     image: ghcr.io/${GHCR_OWNER}/helpdesk-notification-service:${IMAGE_TAG}
-    container_name: helpdesk-notification
     depends_on:
-      postgres:
-        condition: service_healthy
-      nats:
-        condition: service_healthy
+      postgres-init:
+        condition: service_completed_successfully
       nats-init:
         condition: service_completed_successfully
     environment:
@@ -212,14 +214,11 @@ services:
       OTEL_SERVICE_NAME: notification-service
 
   audit-service:
-    <<: *app-image
+    <<: *app
     image: ghcr.io/${GHCR_OWNER}/helpdesk-audit-service:${IMAGE_TAG}
-    container_name: helpdesk-audit
     depends_on:
-      postgres:
-        condition: service_healthy
-      nats:
-        condition: service_healthy
+      postgres-init:
+        condition: service_completed_successfully
       nats-init:
         condition: service_completed_successfully
     environment:
@@ -230,15 +229,12 @@ services:
       OTEL_SERVICE_NAME: audit-service
 
   sla-service:
-    <<: *app-image
+    <<: *app
     image: ghcr.io/${GHCR_OWNER}/helpdesk-sla-service:${IMAGE_TAG}
-    container_name: helpdesk-sla
     depends_on:
-      postgres:
-        condition: service_healthy
+      postgres-init:
+        condition: service_completed_successfully
       redis:
-        condition: service_healthy
-      nats:
         condition: service_healthy
       nats-init:
         condition: service_completed_successfully
@@ -255,14 +251,11 @@ services:
       OTEL_SERVICE_NAME: sla-service
 
   escalation-service:
-    <<: *app-image
+    <<: *app
     image: ghcr.io/${GHCR_OWNER}/helpdesk-escalation-service:${IMAGE_TAG}
-    container_name: helpdesk-escalation
     depends_on:
-      postgres:
-        condition: service_healthy
-      nats:
-        condition: service_healthy
+      postgres-init:
+        condition: service_completed_successfully
       nats-init:
         condition: service_completed_successfully
       ticket-service:
@@ -279,13 +272,10 @@ services:
       OTEL_SERVICE_NAME: escalation-service
 
   search-service:
-    <<: *app-image
+    <<: *app
     image: ghcr.io/${GHCR_OWNER}/helpdesk-search-service:${IMAGE_TAG}
-    container_name: helpdesk-search
     depends_on:
       meilisearch:
-        condition: service_healthy
-      nats:
         condition: service_healthy
       nats-init:
         condition: service_completed_successfully
@@ -302,9 +292,8 @@ services:
       OTEL_SERVICE_NAME: search-service
 
   api-gateway:
-    <<: *app-image
+    <<: *app
     image: ghcr.io/${GHCR_OWNER}/helpdesk-api-gateway:${IMAGE_TAG}
-    container_name: helpdesk-gateway
     depends_on:
       - auth-service
       - ticket-service
@@ -324,13 +313,11 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
       OTEL_SERVICE_NAME: api-gateway
     ports:
-      # Public API for curl / e2e / mobile clients
       - "${GATEWAY_PORT:-8080}:8080"
 
   web:
-    <<: *app-image
+    <<: *app
     image: ghcr.io/${GHCR_OWNER}/helpdesk-web:${IMAGE_TAG}
-    container_name: helpdesk-web
     depends_on:
       - api-gateway
     environment:
@@ -338,7 +325,6 @@ services:
       PORT: "3000"
       HOSTNAME: "0.0.0.0"
     ports:
-      # Public agent UI
       - "${WEB_PORT:-80}:3000"
 
 volumes:
