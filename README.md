@@ -125,8 +125,9 @@ make up
 | `audit-service` | 50054 | timeline gRPC |
 | `sla-service` | 50055 | Redis timers → `sla.warned` / `sla.breached` |
 | `escalation-service` | 50056 | on breach → L2 assign + `ticket.escalated` |
+| `search-service` | 50057 | Meilisearch index + gRPC search |
 | `notification-service` | — | mock notify → `notification.sent` |
-| `api-gateway` | 8080 | HTTP → gRPC |
+| `api-gateway` | 8080 | HTTP → gRPC (card + search) |
 
 JetStream streams создаются автоматически контейнером `nats-init`:
 
@@ -150,9 +151,9 @@ curl -s -X POST http://localhost:8080/tickets \
   -H 'Content-Type: application/json' \
   -d '{"title":"VPN down","description":"Cannot connect","priority":"high","category":"Network"}'
 
-# Phase 2+3 happy path
-make e2e          # assign/notify/audit + SLA breach → L2
-make e2e-phase3   # только SLA/escalation
+# Phase 2+3+4 happy path
+make e2e          # assign/notify + SLA + search/card
+make e2e-phase4   # только search + BFF card
 ```
 
 Остановка:
@@ -164,7 +165,7 @@ make reset     # удалить volumes
 
 ## Go monorepo
 
-Workspace: [`go.work`](go.work) включает libs, codegen и сервисы Фаз 0–3.
+Workspace: [`go.work`](go.work) включает libs, codegen и сервисы Фаз 0–4.
 
 | Пакет | Назначение |
 |-------|------------|
@@ -178,7 +179,8 @@ Workspace: [`go.work`](go.work) включает libs, codegen и сервисы
 | [`services/audit-service`](services/audit-service) | append-only timeline |
 | [`services/sla-service`](services/sla-service) | Redis SLA timers |
 | [`services/escalation-service`](services/escalation-service) | breach → L2 |
-| [`services/api-gateway`](services/api-gateway) | HTTP BFF (`timeline`, `sla`) |
+| [`services/search-service`](services/search-service) | Meilisearch indexer + search |
+| [`services/api-gateway`](services/api-gateway) | HTTP BFF (`/search`, `/tickets/{id}/card`) |
 
 ```bash
 make proto
@@ -199,9 +201,9 @@ Compose SLA defaults (override via `.env`): `SLA_FIRST_RESPONSE=5s`, `SLA_RESOLV
 | 1 | `ticket-service` (gRPC) + outbox + gateway (HTTP→gRPC) + auth — **done** |
 | 2 | assignment, notification, audit — **done** |
 | 3 | SLA + escalation + DLQ (`helpdesk.dlq.>`) — **done** |
-| 4 | search + BFF aggregation по gRPC |
+| 4 | search + BFF aggregation по gRPC — **done** |
 | 5 | Next.js MVP (UI preview already in `apps/web`) |
-| 6 | tracing (gRPC + NATS), load/chaos, hardening |
+| 6 | tracing, load/chaos, hardening |
 
 ## Принципы
 

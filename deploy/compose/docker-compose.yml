@@ -77,10 +77,11 @@ services:
     volumes:
       - meili_data:/meili_data
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:7700/health"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:7700/health || exit 1"]
       interval: 5s
       timeout: 3s
-      retries: 10
+      retries: 20
+      start_period: 10s
 
   auth-service:
     build:
@@ -229,6 +230,31 @@ services:
       - "${ESCALATION_GRPC_PORT:-50056}:50056"
     restart: unless-stopped
 
+  search-service:
+    build:
+      context: ../..
+      dockerfile: services/search-service/Dockerfile
+    container_name: helpdesk-search
+    depends_on:
+      meilisearch:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      nats-init:
+        condition: service_completed_successfully
+      ticket-service:
+        condition: service_started
+    environment:
+      SEARCH_GRPC_ADDR: ":50057"
+      TICKET_GRPC_ADDR: ticket-service:50052
+      NATS_URL: nats://nats:4222
+      MEILI_HOST: http://meilisearch:7700
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
+      MEILI_INDEX: tickets
+    ports:
+      - "${SEARCH_GRPC_PORT:-50057}:50057"
+    restart: unless-stopped
+
   api-gateway:
     build:
       context: ../..
@@ -240,6 +266,7 @@ services:
       - assignment-service
       - audit-service
       - sla-service
+      - search-service
     environment:
       GATEWAY_HTTP_ADDR: ":8080"
       AUTH_GRPC_ADDR: auth-service:50051
@@ -247,6 +274,7 @@ services:
       ASSIGNMENT_GRPC_ADDR: assignment-service:50053
       AUDIT_GRPC_ADDR: audit-service:50054
       SLA_GRPC_ADDR: sla-service:50055
+      SEARCH_GRPC_ADDR: search-service:50057
     ports:
       - "${GATEWAY_HTTP_PORT:-8080}:8080"
     restart: unless-stopped

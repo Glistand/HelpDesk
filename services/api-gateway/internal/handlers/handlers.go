@@ -3,10 +3,14 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
+	"sync"
 
+	assignmentv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/assignment/v1"
 	auditv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/audit/v1"
 	authv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/auth/v1"
+	searchv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/search/v1"
 	slav1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/sla/v1"
 	ticketv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/ticket/v1"
 	"github.com/Glistand/HelpDesk/services/api-gateway/internal/clients"
@@ -155,8 +159,127 @@ func (a *API) GetSLA(w http.ResponseWriter, r *http.Request) {
 		writeGRPCErr(w, err)
 		return
 	}
-	s := resp.GetSla()
+	writeJSON(w, http.StatusOK, slaJSON(resp.GetSla()))
+}
+
+// GetTicketCard aggregates ticket + assignment + sla + timeline for the UI.
+func (a *API) GetTicketCard(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		writeErr(w, http.StatusBadRequest, "missing id")
+		return
+	}
+
+	ctx := r.Context()
+	var (
+		ticketResp *ticketv1.GetTicketResponse
+		assignResp *assignmentv1.GetAssignmentResponse
+		slaResp    *slav1.GetSLAResponse
+		tlResp     *auditv1.GetTimelineResponse
+		ticketErr, assignErr, slaErr, tlErr error
+		wg         sync.WaitGroup
+	)
+	wg.Add(4)
+	go func() {
+		defer wg.Done()
+		ticketResp, ticketErr = a.c.Ticket.GetTicket(ctx, &ticketv1.GetTicketRequest{Id: id})
+	}()
+	go func() {
+		defer wg.Done()
+		assignResp, assignErr = a.c.Assignment.GetAssignment(ctx, &assignmentv1.GetAssignmentRequest{TicketId: id})
+	}()
+	go func() {
+		defer wg.Done()
+		slaResp, slaErr = a.c.SLA.GetSLA(ctx, &slav1.GetSLARequest{TicketId: id})
+	}()
+	go func() {
+		defer wg.Done()
+		tlResp, tlErr = a.c.Audit.GetTimeline(ctx, &auditv1.GetTimelineRequest{TicketId: id})
+	}()
+	wg.Wait()
+
+	if ticketErr != nil {
+		writeGRPCErr(w, ticketErr)
+		return
+	}
+
+	card := map[string]any{
+		"ticket": ticketJSON(ticketResp.GetTicket()),
+	}
+	if assignErr == nil && assignResp.GetAssignment() != nil {
+		as := assignResp.GetAssignment()
+		card["assignment"] = map[string]any{
+			"ticket_id":     as.GetTicketId(),
+			"assignee_id":   as.GetAssigneeId(),
+			"assignee_name": as.GetAssigneeName(),
+			"assigned_at":   as.GetAssignedAt(),
+		}
+	} else {
+		card["assignment"] = nil
+	}
+	if slaErr == nil && slaResp.GetSla() != nil {
+		card["sla"] = slaJSON(slaResp.GetSla())
+	} else {
+		card["sla"] = nil
+	}
+	events := make([]map[string]any, 0)
+	if tlErr == nil {
+		for _, e := range tlResp.GetEvents() {
+			events = append(events, map[string]any{
+				"id":          e.GetId(),
+				"ticket_id":   e.GetTicketId(),
+				"event_id":    e.GetEventId(),
+				"event_type":  e.GetEventType(),
+				"title":       e.GetTitle(),
+				"detail":      e.GetDetail(),
+				"actor":       e.GetActor(),
+				"occurred_at": e.GetOccurredAt(),
+			})
+		}
+	}
+	card["timeline"] = events
+	writeJSON(w, http.StatusOK, card)
+}
+
+func (a *API) SearchTickets(w http.ResponseWriter, r *http.Request) {
+	q := strings.TrimSpace(r.URL.Query().Get("q"))
+	limit := int32(20)
+	if v := r.URL.Query().Get("limit"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			limit = int32(n)
+		}
+	}
+	resp, err := a.c.Search.SearchTickets(r.Context(), &searchv1.SearchTicketsRequest{
+		Query: q,
+		Limit: limit,
+	})
+	if err != nil {
+		writeGRPCErr(w, err)
+		return
+	}
+	hits := make([]map[string]any, 0, len(resp.GetHits()))
+	for _, h := range resp.GetHits() {
+		hits = append(hits, map[string]any{
+			"id":          h.GetId(),
+			"title":       h.GetTitle(),
+			"description": h.GetDescription(),
+			"status":      h.GetStatus(),
+			"priority":    h.GetPriority(),
+			"category":    h.GetCategory(),
+			"requester":   h.GetRequester(),
+			"assignee_id": h.GetAssigneeId(),
+			"updated_at":  h.GetUpdatedAt(),
+		})
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
+		"hits":            hits,
+		"estimated_total": resp.GetEstimatedTotal(),
+		"query":           q,
+	})
+}
+
+func slaJSON(s *slav1.SLA) map[string]any {
+	return map[string]any{
 		"ticket_id":          s.GetTicketId(),
 		"state":              slaStateString(s.GetState()),
 		"first_response_due": s.GetFirstResponseDue(),
@@ -164,7 +287,7 @@ func (a *API) GetSLA(w http.ResponseWriter, r *http.Request) {
 		"warned_at":          s.GetWarnedAt(),
 		"breached_at":        s.GetBreachedAt(),
 		"policy":             s.GetPolicy(),
-	})
+	}
 }
 
 func slaStateString(s slav1.SLAState) string {

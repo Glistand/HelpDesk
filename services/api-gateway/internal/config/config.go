@@ -9,6 +9,7 @@ type Config struct {
 	AssignmentGRPCAddr string
 	AuditGRPCAddr      string
 	SLAGRPCAddr        string
+	SearchGRPCAddr     string
 }
 
 func Load() Config {
@@ -19,6 +20,7 @@ func Load() Config {
 		AssignmentGRPCAddr: getenv("ASSIGNMENT_GRPC_ADDR", "localhost:50053"),
 		AuditGRPCAddr:      getenv("AUDIT_GRPC_ADDR", "localhost:50054"),
 		SLAGRPCAddr:        getenv("SLA_GRPC_ADDR", "localhost:50055"),
+		SearchGRPCAddr:     getenv("SEARCH_GRPC_ADDR", "localhost:50057"),
 	}
 }
 

@@ -10,6 +10,7 @@ use (
 	./services/auth-service
 	./services/escalation-service
 	./services/notification-service
+	./services/search-service
 	./services/sla-service
 	./services/ticket-service
 )

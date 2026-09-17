@@ -6,6 +6,7 @@ import (
 	assignmentv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/assignment/v1"
 	auditv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/audit/v1"
 	authv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/auth/v1"
+	searchv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/search/v1"
 	slav1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/sla/v1"
 	ticketv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/ticket/v1"
 	"github.com/Glistand/HelpDesk/libs/grpckit"
@@ -19,10 +20,11 @@ type Clients struct {
 	Assignment assignmentv1.AssignmentServiceClient
 	Audit      auditv1.AuditServiceClient
 	SLA        slav1.SLAServiceClient
+	Search     searchv1.SearchServiceClient
 	conns      []*grpc.ClientConn
 }
 
-func Dial(ctx context.Context, authAddr, ticketAddr, assignmentAddr, auditAddr, slaAddr string) (*Clients, error) {
+func Dial(ctx context.Context, authAddr, ticketAddr, assignmentAddr, auditAddr, slaAddr, searchAddr string) (*Clients, error) {
 	dial := func(addr string) (*grpc.ClientConn, error) {
 		return grpc.NewClient(addr,
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -30,7 +32,7 @@ func Dial(ctx context.Context, authAddr, ticketAddr, assignmentAddr, auditAddr, 
 		)
 	}
 
-	addrs := []string{authAddr, ticketAddr, assignmentAddr, auditAddr, slaAddr}
+	addrs := []string{authAddr, ticketAddr, assignmentAddr, auditAddr, slaAddr, searchAddr}
 	conns := make([]*grpc.ClientConn, 0, len(addrs))
 	for _, addr := range addrs {
 		c, err := dial(addr)
@@ -49,6 +51,7 @@ func Dial(ctx context.Context, authAddr, ticketAddr, assignmentAddr, auditAddr, 
 		Assignment: assignmentv1.NewAssignmentServiceClient(conns[2]),
 		Audit:      auditv1.NewAuditServiceClient(conns[3]),
 		SLA:        slav1.NewSLAServiceClient(conns[4]),
+		Search:     searchv1.NewSearchServiceClient(conns[5]),
 		conns:      conns,
 	}, nil
 }

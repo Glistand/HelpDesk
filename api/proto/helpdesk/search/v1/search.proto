@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package helpdesk.search.v1;
+
+option go_package = "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/search/v1;searchv1";
+
+// SearchService indexes tickets into Meilisearch and exposes full-text search.
+service SearchService {
+  rpc SearchTickets(SearchTicketsRequest) returns (SearchTicketsResponse);
+}
+
+message SearchHit {
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  string status = 4;
+  string priority = 5;
+  string category = 6;
+  string requester = 7;
+  string assignee_id = 8;
+  string updated_at = 9;
+}
+
+message SearchTicketsRequest {
+  string query = 1;
+  int32 limit = 2;
+}
+
+message SearchTicketsResponse {
+  repeated SearchHit hits = 1;
+  int64 estimated_total = 2;
+}
