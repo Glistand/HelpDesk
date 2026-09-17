@@ -197,6 +197,18 @@ GHCR_OWNER=glistand IMAGE_TAG=latest make up-ghcr
 
 `make up-ghcr` тянет образы через [`deploy/compose/docker-compose.ghcr.yml`](deploy/compose/docker-compose.ghcr.yml) и поднимает стек без локальной сборки.
 
+### Деплой на сервер
+
+Готовый стек с **двумя** опубликованными портами (UI + API): [`deploy/server/`](deploy/server/).
+
+```bash
+cp deploy/server/.env.example deploy/server/.env   # смените секреты
+make up-server
+# UI  :80   API :8080
+```
+
+Подробности — [`deploy/server/README.md`](deploy/server/README.md).
+
 ## Go monorepo
 
 Workspace: [`go.work`](go.work) включает libs, codegen и сервисы Фаз 0–4. UI — [`apps/web`](apps/web) (Next.js App Router).

@@ -1,0 +1,348 @@
+# HelpDesk — server stack (GHCR images, minimal published ports)
+#
+# Outside (host):
+#   WEB_PORT      → Next.js UI  (default 80)
+#   GATEWAY_PORT  → HTTP API    (default 8080)
+#
+# Everything else stays on the internal Docker network only.
+#
+# Usage on the server (from repo root or this directory):
+#   cp deploy/server/.env.example deploy/server/.env
+#   # edit JWT_SECRET, POSTGRES_PASSWORD, MEILI_MASTER_KEY
+#   echo "$GITHUB_TOKEN" | docker login ghcr.io -u YOUR_USER --password-stdin
+#   docker compose --env-file deploy/server/.env -f deploy/server/docker-compose.yml pull
+#   docker compose --env-file deploy/server/.env -f deploy/server/docker-compose.yml up -d
+#
+# UI:  http://SERVER:80
+# API: http://SERVER:8080/healthz
+# Seed: agent@helpdesk.local / password
+
+name: helpdesk
+
+x-app-image: &app-image
+  pull_policy: ${PULL_POLICY:-always}
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: helpdesk-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../compose/init/postgres:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  redis:
+    image: redis:7-alpine
+    container_name: helpdesk-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  nats:
+    image: nats:2.11-alpine
+    container_name: helpdesk-nats
+    command: ["-js", "-m", "8222", "-sd", "/data"]
+    volumes:
+      - nats_data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8222/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  nats-init:
+    image: natsio/nats-box:0.18.0
+    container_name: helpdesk-nats-init
+    depends_on:
+      nats:
+        condition: service_healthy
+    environment:
+      NATS_URL: nats://nats:4222
+    volumes:
+      - ../compose/init/nats:/scripts:ro
+    entrypoint: ["/bin/sh", "/scripts/setup-streams.sh"]
+    restart: "no"
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.14
+    container_name: helpdesk-meilisearch
+    environment:
+      MEILI_ENV: ${MEILI_ENV:-production}
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
+    volumes:
+      - meili_data:/meili_data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:7700/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 15s
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    container_name: helpdesk-jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    # No host ports: OTLP only inside the Docker network (jaeger:4318).
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:16686/ || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  auth-service:
+    <<: *app-image
+    image: ghcr.io/${GHCR_OWNER}/helpdesk-auth-service:${IMAGE_TAG}
+    container_name: helpdesk-auth
+    depends_on:
+      jaeger:
+        condition: service_started
+    environment:
+      AUTH_GRPC_ADDR: ":50051"
+      JWT_SECRET: ${JWT_SECRET}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      OTEL_SERVICE_NAME: auth-service
+
+  ticket-service:
+    <<: *app-image
+    image: ghcr.io/${GHCR_OWNER}/helpdesk-ticket-service:${IMAGE_TAG}
+    container_name: helpdesk-ticket
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      nats-init:
+        condition: service_completed_successfully
+      jaeger:
+        condition: service_started
+    environment:
+      TICKET_GRPC_ADDR: ":50052"
+      TICKET_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/ticket?sslmode=disable
+      NATS_URL: nats://nats:4222
+      OUTBOX_POLL_INTERVAL: ${OUTBOX_POLL_INTERVAL:-500ms}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      OTEL_SERVICE_NAME: ticket-service
+
+  assignment-service:
+    <<: *app-image
+    image: ghcr.io/${GHCR_OWNER}/helpdesk-assignment-service:${IMAGE_TAG}
+    container_name: helpdesk-assignment
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      nats-init:
+        condition: service_completed_successfully
+      ticket-service:
+        condition: service_started
+    environment:
+      ASSIGNMENT_GRPC_ADDR: ":50053"
+      ASSIGNMENT_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/assignment?sslmode=disable
+      TICKET_GRPC_ADDR: ticket-service:50052
+      NATS_URL: nats://nats:4222
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      OTEL_SERVICE_NAME: assignment-service
+
+  notification-service:
+    <<: *app-image
+    image: ghcr.io/${GHCR_OWNER}/helpdesk-notification-service:${IMAGE_TAG}
+    container_name: helpdesk-notification
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      nats-init:
+        condition: service_completed_successfully
+    environment:
+      NOTIFICATION_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/notification?sslmode=disable
+      NATS_URL: nats://nats:4222
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      OTEL_SERVICE_NAME: notification-service
+
+  audit-service:
+    <<: *app-image
+    image: ghcr.io/${GHCR_OWNER}/helpdesk-audit-service:${IMAGE_TAG}
+    container_name: helpdesk-audit
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      nats-init:
+        condition: service_completed_successfully
+    environment:
+      AUDIT_GRPC_ADDR: ":50054"
+      AUDIT_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/audit?sslmode=disable
+      NATS_URL: nats://nats:4222
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      OTEL_SERVICE_NAME: audit-service
+
+  sla-service:
+    <<: *app-image
+    image: ghcr.io/${GHCR_OWNER}/helpdesk-sla-service:${IMAGE_TAG}
+    container_name: helpdesk-sla
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      nats-init:
+        condition: service_completed_successfully
+    environment:
+      SLA_GRPC_ADDR: ":50055"
+      SLA_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/sla?sslmode=disable
+      REDIS_URL: redis://redis:6379/0
+      NATS_URL: nats://nats:4222
+      SLA_FIRST_RESPONSE: ${SLA_FIRST_RESPONSE:-5m}
+      SLA_RESOLVE: ${SLA_RESOLVE:-30m}
+      SLA_WARN_RATIO: ${SLA_WARN_RATIO:-0.5}
+      SLA_POLL_INTERVAL: ${SLA_POLL_INTERVAL:-1s}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      OTEL_SERVICE_NAME: sla-service
+
+  escalation-service:
+    <<: *app-image
+    image: ghcr.io/${GHCR_OWNER}/helpdesk-escalation-service:${IMAGE_TAG}
+    container_name: helpdesk-escalation
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      nats-init:
+        condition: service_completed_successfully
+      ticket-service:
+        condition: service_started
+      sla-service:
+        condition: service_started
+    environment:
+      ESCALATION_GRPC_ADDR: ":50056"
+      ESCALATION_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/escalation?sslmode=disable
+      TICKET_GRPC_ADDR: ticket-service:50052
+      NATS_URL: nats://nats:4222
+      ESCALATION_L2_ASSIGNEE: ${ESCALATION_L2_ASSIGNEE:-a-3}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      OTEL_SERVICE_NAME: escalation-service
+
+  search-service:
+    <<: *app-image
+    image: ghcr.io/${GHCR_OWNER}/helpdesk-search-service:${IMAGE_TAG}
+    container_name: helpdesk-search
+    depends_on:
+      meilisearch:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      nats-init:
+        condition: service_completed_successfully
+      ticket-service:
+        condition: service_started
+    environment:
+      SEARCH_GRPC_ADDR: ":50057"
+      TICKET_GRPC_ADDR: ticket-service:50052
+      NATS_URL: nats://nats:4222
+      MEILI_HOST: http://meilisearch:7700
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
+      MEILI_INDEX: tickets
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      OTEL_SERVICE_NAME: search-service
+
+  api-gateway:
+    <<: *app-image
+    image: ghcr.io/${GHCR_OWNER}/helpdesk-api-gateway:${IMAGE_TAG}
+    container_name: helpdesk-gateway
+    depends_on:
+      - auth-service
+      - ticket-service
+      - assignment-service
+      - audit-service
+      - sla-service
+      - search-service
+      - jaeger
+    environment:
+      GATEWAY_HTTP_ADDR: ":8080"
+      AUTH_GRPC_ADDR: auth-service:50051
+      TICKET_GRPC_ADDR: ticket-service:50052
+      ASSIGNMENT_GRPC_ADDR: assignment-service:50053
+      AUDIT_GRPC_ADDR: audit-service:50054
+      SLA_GRPC_ADDR: sla-service:50055
+      SEARCH_GRPC_ADDR: search-service:50057
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      OTEL_SERVICE_NAME: api-gateway
+    ports:
+      # Public API for curl / e2e / mobile clients
+      - "${GATEWAY_PORT:-8080}:8080"
+
+  web:
+    <<: *app-image
+    image: ghcr.io/${GHCR_OWNER}/helpdesk-web:${IMAGE_TAG}
+    container_name: helpdesk-web
+    depends_on:
+      - api-gateway
+    environment:
+      GATEWAY_URL: http://api-gateway:8080
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+    ports:
+      # Public agent UI
+      - "${WEB_PORT:-80}:3000"
+
+volumes:
+  postgres_data:
+  redis_data:
+  nats_data:
+  meili_data:

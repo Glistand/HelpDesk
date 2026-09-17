@@ -1,7 +1,9 @@
-.PHONY: up up-ghcr down logs ps reset nats-streams env web web-build proto build-libs build-services test-go e2e e2e-phase2 e2e-phase3 e2e-phase4 e2e-phase5 e2e-phase6 load-phase6 chaos-phase6
+.PHONY: up up-ghcr up-server down logs ps reset nats-streams env web web-build proto build-libs build-services test-go e2e e2e-phase2 e2e-phase3 e2e-phase4 e2e-phase5 e2e-phase6 load-phase6 chaos-phase6
 
 COMPOSE_FILE := deploy/compose/docker-compose.yml
 COMPOSE_GHCR_FILE := deploy/compose/docker-compose.ghcr.yml
+COMPOSE_SERVER_FILE := deploy/server/docker-compose.yml
+SERVER_ENV_FILE := deploy/server/.env
 ENV_FILE := .env
 
 up: env
@@ -12,6 +14,12 @@ up: env
 up-ghcr: env
 	docker compose --env-file $(ENV_FILE) -f $(COMPOSE_FILE) -f $(COMPOSE_GHCR_FILE) pull
 	docker compose --env-file $(ENV_FILE) -f $(COMPOSE_FILE) -f $(COMPOSE_GHCR_FILE) up -d --no-build
+
+# Server-oriented stack: GHCR images, only WEB_PORT + GATEWAY_PORT published.
+up-server:
+	@test -f $(SERVER_ENV_FILE) || cp deploy/server/.env.example $(SERVER_ENV_FILE)
+	docker compose --env-file $(SERVER_ENV_FILE) -f $(COMPOSE_SERVER_FILE) pull
+	docker compose --env-file $(SERVER_ENV_FILE) -f $(COMPOSE_SERVER_FILE) up -d
 
 down:
 	docker compose --env-file $(ENV_FILE) -f $(COMPOSE_FILE) down
