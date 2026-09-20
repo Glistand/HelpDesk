@@ -5,3 +5,4 @@ CREATE DATABASE sla;
 CREATE DATABASE escalation;
 CREATE DATABASE notification;
 CREATE DATABASE audit;
+CREATE DATABASE conversation;

@@ -80,3 +80,37 @@ export interface AuthUser {
   name: string;
   role: string;
 }
+
+export type ConversationStatus =
+  | "bot"
+  | "waiting_agent"
+  | "open"
+  | "resolved"
+  | "unspecified";
+
+export type MessageRole = "visitor" | "bot" | "agent" | "system" | "unspecified";
+
+export interface ConversationSummary {
+  id: string;
+  siteKey: string;
+  visitorId: string;
+  status: ConversationStatus;
+  assigneeId: string;
+  preview: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  conversationId: string;
+  role: MessageRole;
+  body: string;
+  authorId: string;
+  createdAt: string;
+}
+
+export interface ConversationDetail {
+  conversation: ConversationSummary;
+  messages: ChatMessage[];
+}

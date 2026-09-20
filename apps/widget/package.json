@@ -1,0 +1,13 @@
+{
+  "name": "@helpdesk/widget",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --minify --format=iife --global-name=HelpDeskWidget --outfile=dist/widget.js && cp dist/widget.js ../web/public/widget.js",
+    "dev": "esbuild src/index.ts --bundle --format=iife --global-name=HelpDeskWidget --outfile=../web/public/widget.js --watch"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "typescript": "^5"
+  }
+}

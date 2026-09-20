@@ -19,6 +19,8 @@ curl -s http://127.0.0.1:8080/healthz
 
 - UI: `http://SERVER/`
 - API: `http://SERVER:8080`
+- Widget demo: `http://SERVER/widget-demo.html`
 - Логин: `agent@helpdesk.local` / `password`
+- Bot: set `OPENROUTER_API_KEY` in `.env` (model defaults to free `inclusionai/ling-3.0-flash-vl:free`)
 
 Init Postgres/NATS встроен в compose (отдельные one-shot контейнеры) — репозиторий и папка `init/` не нужны.

@@ -9,7 +9,10 @@ export function middleware(req: NextRequest) {
     pathname === "/login" ||
     pathname.startsWith("/api/auth/") ||
     pathname.startsWith("/_next") ||
-    pathname === "/favicon.ico";
+    pathname === "/favicon.ico" ||
+    pathname === "/widget.js" ||
+    pathname === "/widget-demo.html" ||
+    pathname.startsWith("/widget");
 
   if (isPublic) return NextResponse.next();
 

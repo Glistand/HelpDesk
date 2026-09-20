@@ -1,18 +1,29 @@
-# Helpdesk Event Hub
+# HelpDesk — Support Desk
 
-Event-driven helpdesk: **Go**-сервисы, **gRPC** между ними, **NATS JetStream** для событий, UI на **Next.js**.
+Встраиваемый **чат-виджет** для сайтов + **агентская консоль**. Посетитель пишет в пузырь справа снизу → бот (OpenRouter) отвечает → при необходимости handoff → агент отвечает в UI.
 
-Клиент или агент создаёт тикет → система назначает исполнителя, считает SLA, шлёт уведомления и при просрочке эскалирует. Синхронные вызовы — по gRPC, побочные эффекты — через NATS.
+Тикеты/SLA/escalation остаются в compose как legacy Event Hub, но primary UX — **беседы**.
 
-Репозиторий: [github.com/Glistand/HelpDesk](https://github.com/Glistand/HelpDesk) — monorepo, без отдельных GitLab-проектов.
+Репозиторий: [github.com/Glistand/HelpDesk](https://github.com/Glistand/HelpDesk) — monorepo.
 
-## Цели
+## Продукт (эта фаза)
+
+| Компонент | Назначение |
+|-----------|------------|
+| `apps/widget` | FAB + чат; `<script src="…/widget.js" data-site-key="demo-site" data-gateway="http://localhost:8080">` |
+| `conversation-service` | сессии/сообщения, OpenRouter, NATS `helpdesk.conversation.>` |
+| `api-gateway` | публичный `/widget/*` + JWT `/conversations*` |
+| `apps/web` | inbox бесед, тред, ответ агента |
+
+Демо-страница виджета: `http://localhost:3001/widget-demo.html` (после `make web` или compose `web`).
+
+## Цели (платформа)
 
 - Bounded contexts и database-per-service
 - **gRPC** как единственный sync-транспорт между сервисами
 - Choreography через NATS JetStream (fan-out, retries, DLQ)
 - Transactional outbox и идемпотентные consumers
-- SLA и escalation как отдельные сервисы
+- SLA и escalation как отдельные сервисы *(не в primary UX)*
 - BFF / API Gateway (HTTP снаружи → gRPC внутрь)
 - Локальный и первый деплой — **Docker Compose**
 
@@ -43,9 +54,10 @@ Event-driven helpdesk: **Go**-сервисы, **gRPC** между ними, **NA
 
 | Сервис | Роль | Exposes |
 |--------|------|---------|
-| `api-gateway` | JWT, routing, aggregation для UI | HTTP |
+| `api-gateway` | JWT, routing, widget public API, aggregation | HTTP |
 | `auth-service` | Пользователи, роли, токены | gRPC |
-| `ticket-service` | CRUD тикетов, статусы, outbox → NATS | gRPC |
+| `conversation-service` | Беседы, сообщения, OpenRouter bot | gRPC |
+| `ticket-service` | CRUD тикетов, статусы, outbox → NATS *(legacy UX)* | gRPC |
 | `assignment-service` | Авто-назначение агента / очереди | gRPC + NATS consumer |
 | `sla-service` | Политики SLA, таймеры, `sla.breached` | gRPC + NATS consumer |
 | `escalation-service` | Повышение приоритета / смена очереди | gRPC + NATS consumer |
@@ -81,11 +93,13 @@ Gateway --gRPC--> audit-service / sla-service   # BFF: склеить карто
 ```text
 HelpDesk/
 ├── apps/
-│   └── web/                 # Next.js
+│   ├── web/                 # Next.js agent console (conversations)
+│   └── widget/              # embeddable chat FAB → builds to web/public/widget.js
 ├── api/
 │   └── proto/               # .proto контракты + buf/protoc codegen
 ├── services/
-│   ├── api-gateway/         # HTTP → gRPC clients
+│   ├── api-gateway/         # HTTP → gRPC (+ /widget public API)
+│   ├── conversation-service/# chat + OpenRouter bot
 │   ├── auth-service/
 │   ├── ticket-service/
 │   ├── assignment-service/
@@ -99,6 +113,8 @@ HelpDesk/
 │   └── grpckit/             # interceptors, metadata, errors
 ├── deploy/
 │   └── compose/             # Docker Compose: NATS, Postgres, Redis, …
+├── scripts/
+│   └── smoke-widget.sh      # widget → bot → handoff → agent
 ├── Makefile
 └── README.md
 ```
@@ -107,6 +123,7 @@ HelpDesk/
 
 ```bash
 cp .env.example .env
+# optional: set OPENROUTER_API_KEY for live bot replies (free model by default)
 make up
 ```
 
@@ -114,7 +131,7 @@ make up
 
 | Сервис | Порт | Назначение |
 |--------|------|------------|
-| PostgreSQL | 5432 | отдельные БД на сервис (`auth`, `ticket`, …) |
+| PostgreSQL | 5432 | отдельные БД на сервис (`auth`, `ticket`, `conversation`, …) |
 | Redis | 6379 | SLA timers |
 | NATS | 4222 | клиентский порт |
 | NATS monitor | 8222 | health / metrics |
@@ -126,14 +143,15 @@ make up
 | `sla-service` | 50055 | Redis timers → `sla.warned` / `sla.breached` |
 | `escalation-service` | 50056 | on breach → L2 assign + `ticket.escalated` |
 | `search-service` | 50057 | Meilisearch index + gRPC search |
+| `conversation-service` | 50058 | chat + OpenRouter |
 | `notification-service` | — | mock notify → `notification.sent` |
-| `api-gateway` | 8080 | HTTP → gRPC (card + search) |
+| `api-gateway` | 8080 | HTTP → gRPC (widget + conversations + tickets) |
 | `web` (Next.js) | 3001 | agent console → gateway (`GATEWAY_URL`) |
 | Jaeger UI | 16686 | traces (OTLP `:4318`) |
 
 JetStream streams создаются автоматически контейнером `nats-init`:
 
-- `HELP_DESK_EVENTS` — subjects `helpdesk.ticket.>`, `helpdesk.sla.>`, …
+- `HELP_DESK_EVENTS` — subjects `helpdesk.ticket.>`, `helpdesk.conversation.>`, `helpdesk.sla.>`, …
 - `HELP_DESK_DLQ` — subjects `helpdesk.dlq.>` (отдельный stream, без overlap)
 
 Проверка:
@@ -143,26 +161,36 @@ make ps
 curl http://localhost:8222/healthz
 curl http://localhost:8080/healthz
 
+# Support desk smoke: widget → bot → handoff → agent
+./scripts/smoke-widget.sh
+# make smoke-widget
+
+# Existing Postgres volume without `conversation` DB:
+# docker exec helpdesk-postgres psql -U helpdesk -d postgres -c 'CREATE DATABASE conversation;'
+
 # login (seed: agent@helpdesk.local / password)
 TOKEN=$(curl -s -X POST http://localhost:8080/auth/login \
   -H 'Content-Type: application/json' \
   -d '{"email":"agent@helpdesk.local","password":"password"}' | jq -r .access_token)
 
+# Legacy tickets still work
 curl -s -X POST http://localhost:8080/tickets \
   -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{"title":"VPN down","description":"Cannot connect","priority":"high","category":"Network"}'
 
-# Phase 2–6 happy path
-make e2e          # assign/notify + SLA + search/card + Next.js BFF + tracing/hardening
-make e2e-phase6   # headers/auth + Jaeger traces + load + chaos restart
-make load-phase6  # concurrent creates
-make chaos-phase6 # bounce assignment-service
+# Phase 2–6 happy path (tickets/SLA)
+make e2e
+make e2e-phase6
 
 # UI (dev, без Docker)
 cd apps/web && cp .env.example .env.local   # GATEWAY_URL=http://localhost:8080
 make web                                    # http://localhost:3001
+# widget demo: http://localhost:3001/widget-demo.html
 # seed: agent@helpdesk.local / password
+
+# rebuild embed script after editing apps/widget
+cd apps/widget && npm install && npm run build
 ```
 
 Остановка:
@@ -227,8 +255,10 @@ Workspace: [`go.work`](go.work) включает libs, codegen и сервисы
 | [`services/sla-service`](services/sla-service) | Redis SLA timers |
 | [`services/escalation-service`](services/escalation-service) | breach → L2 |
 | [`services/search-service`](services/search-service) | Meilisearch indexer + search |
-| [`services/api-gateway`](services/api-gateway) | HTTP BFF (`/search`, `/tickets/{id}/card`) |
-| [`apps/web`](apps/web) | Next.js MVP: cookie `hd_token`, proxy `/api/hd/*`, inbox/card/create/search |
+| [`services/conversation-service`](services/conversation-service) | conversations + OpenRouter |
+| [`services/api-gateway`](services/api-gateway) | HTTP BFF (`/widget/*`, `/conversations`, tickets) |
+| [`apps/web`](apps/web) | Next.js: conversations inbox/thread + legacy tickets |
+| [`apps/widget`](apps/widget) | Embeddable support chat → `public/widget.js` |
 
 ```bash
 make proto
@@ -274,6 +304,9 @@ Compose SLA defaults (override via `.env`): `SLA_FIRST_RESPONSE=5s`, `SLA_RESOLV
 | `helpdesk.sla.warned` | sla-service | notification |
 | `helpdesk.sla.breached` | sla-service | escalation, notification |
 | `helpdesk.ticket.escalated` | escalation-service | notification, audit |
+| `helpdesk.conversation.created` | conversation-service | (observability / future) |
+| `helpdesk.conversation.message` | conversation-service | (observability / future) |
+| `helpdesk.conversation.handoff` | conversation-service | (observability / future) |
 | `helpdesk.dlq.>` | любой consumer | DLQ stream, ручной replay |
 
 ## Лицензия

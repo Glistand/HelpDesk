@@ -30,17 +30,31 @@ func main() {
 	}
 	defer func() { _ = otelShutdown(context.Background()) }()
 
-	c, err := clients.Dial(ctx, cfg.AuthGRPCAddr, cfg.TicketGRPCAddr, cfg.AssignmentGRPCAddr, cfg.AuditGRPCAddr, cfg.SLAGRPCAddr, cfg.SearchGRPCAddr)
+	c, err := clients.Dial(ctx,
+		cfg.AuthGRPCAddr,
+		cfg.TicketGRPCAddr,
+		cfg.AssignmentGRPCAddr,
+		cfg.AuditGRPCAddr,
+		cfg.SLAGRPCAddr,
+		cfg.SearchGRPCAddr,
+		cfg.ConversationGRPCAddr,
+	)
 	if err != nil {
 		logger.Error("dial grpc failed", "error", err)
 		os.Exit(1)
 	}
 	defer c.Close()
 
-	api := handlers.New(c)
+	api := handlers.New(c, cfg.WidgetSiteKey)
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", api.Health)
 	mux.HandleFunc("POST /auth/login", api.Login)
+
+	// Public widget API (no JWT).
+	mux.HandleFunc("POST /widget/session", api.WidgetSession)
+	mux.HandleFunc("POST /widget/conversations/{id}/messages", api.WidgetPostMessage)
+	mux.HandleFunc("GET /widget/conversations/{id}/messages", api.WidgetListMessages)
+	mux.HandleFunc("POST /widget/conversations/{id}/handoff", api.WidgetHandoff)
 
 	auth := middleware.Auth(c.Auth)
 	mux.Handle("POST /tickets", auth(http.HandlerFunc(api.CreateTicket)))
@@ -52,11 +66,16 @@ func main() {
 	mux.Handle("PATCH /tickets/{id}/status", auth(http.HandlerFunc(api.UpdateTicketStatus)))
 	mux.Handle("GET /search", auth(http.HandlerFunc(api.SearchTickets)))
 
+	mux.Handle("GET /conversations", auth(http.HandlerFunc(api.ListConversations)))
+	mux.Handle("GET /conversations/{id}", auth(http.HandlerFunc(api.GetConversation)))
+	mux.Handle("POST /conversations/{id}/messages", auth(http.HandlerFunc(api.AgentPostMessage)))
+	mux.Handle("POST /conversations/{id}/resolve", auth(http.HandlerFunc(api.ResolveConversation)))
+
 	handler := middleware.Chain(mux,
 		middleware.SecureHeaders,
 		middleware.MaxBody(1<<20),
 		middleware.RateLimit(100, 200),
-		middleware.Timeout(15*time.Second),
+		middleware.Timeout(60*time.Second),
 		middleware.Correlation,
 		middleware.AccessLog(logger),
 		withCORS,
@@ -67,8 +86,8 @@ func main() {
 		Addr:              cfg.HTTPAddr,
 		Handler:           handler,
 		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout:       15 * time.Second,
-		WriteTimeout:      30 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      90 * time.Second,
 		IdleTimeout:       60 * time.Second,
 		MaxHeaderBytes:    1 << 20,
 	}
@@ -90,7 +109,7 @@ func main() {
 func withCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Correlation-Id, X-Request-Id")
+		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Correlation-Id, X-Request-Id, X-Visitor-Id, X-Site-Key")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS")
 		w.Header().Set("Access-Control-Expose-Headers", "X-Correlation-Id, X-Request-Id")
 		if r.Method == http.MethodOptions {

@@ -30,28 +30,21 @@ func NewWithSeed() *Store {
 		byID:  make(map[string]User),
 		email: make(map[string]string),
 	}
-	// Dev seed: agent@helpdesk.local / password
 	hash, _ := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
-	u := User{
-		ID:           "a-1",
-		Email:        "agent@helpdesk.local",
-		Name:         "Алексей К.",
-		Role:         authv1.Role_ROLE_AGENT,
-		PasswordHash: string(hash),
-	}
-	s.byID[u.ID] = u
-	s.email[u.Email] = u.ID
 
-	adminHash, _ := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
-	admin := User{
-		ID:           "a-admin",
-		Email:        "admin@helpdesk.local",
-		Name:         "Admin",
-		Role:         authv1.Role_ROLE_ADMIN,
-		PasswordHash: string(adminHash),
+	seeds := []User{
+		{ID: "a-1", Email: "agent@helpdesk.local", Name: "Алексей К.", Role: authv1.Role_ROLE_AGENT},
+		{ID: "a-2", Email: "maria@helpdesk.local", Name: "Марина С.", Role: authv1.Role_ROLE_AGENT},
+		{ID: "a-3", Email: "ivan@helpdesk.local", Name: "Денис В.", Role: authv1.Role_ROLE_AGENT},
+		{ID: "a-admin", Email: "admin@helpdesk.local", Name: "Admin", Role: authv1.Role_ROLE_ADMIN},
+		{ID: "r-1", Email: "anna@company.local", Name: "Анна П.", Role: authv1.Role_ROLE_REQUESTER},
+		{ID: "r-2", Email: "peter@company.local", Name: "Пётр В.", Role: authv1.Role_ROLE_REQUESTER},
 	}
-	s.byID[admin.ID] = admin
-	s.email[admin.Email] = admin.ID
+	for _, u := range seeds {
+		u.PasswordHash = string(hash)
+		s.byID[u.ID] = u
+		s.email[u.Email] = u.ID
+	}
 	return s
 }
 

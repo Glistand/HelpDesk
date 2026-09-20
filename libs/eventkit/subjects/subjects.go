@@ -9,6 +9,9 @@ const (
 	SLABreached      = "helpdesk.sla.breached"
 	TicketEscalated  = "helpdesk.ticket.escalated"
 	NotificationSent = "helpdesk.notification.sent"
+	ConversationCreated = "helpdesk.conversation.created"
+	ConversationMessage = "helpdesk.conversation.message"
+	ConversationHandoff = "helpdesk.conversation.handoff"
 	DLQPrefix        = "helpdesk.dlq"
 )
 

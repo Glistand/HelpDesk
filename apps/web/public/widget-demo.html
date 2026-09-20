@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Support widget demo</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Georgia, "Times New Roman", serif;
+        background: linear-gradient(160deg, #f3efe6 0%, #d9e4ef 55%, #c5d5c8 100%);
+        color: #1a2330;
+      }
+      main {
+        max-width: 640px;
+        margin: 0 auto;
+        padding: 64px 24px;
+      }
+      h1 {
+        font-size: clamp(2rem, 5vw, 3rem);
+        margin: 0 0 12px;
+        letter-spacing: -0.02em;
+      }
+      p {
+        font-size: 1.1rem;
+        line-height: 1.6;
+        opacity: 0.85;
+      }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.85em;
+        background: rgba(255, 255, 255, 0.55);
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Acme Store</h1>
+      <p>
+        Демо-страница сайта с встроенным support-виджетом. Откройте пузырь справа
+        снизу — бот отвечает через OpenRouter. Кнопка «Нужен человек» передаёт
+        диалог агенту в консоли Support Desk.
+      </p>
+      <p>
+        Встраивание:
+        <code>&lt;script src="/widget.js" data-site-key="demo-site" data-gateway="http://localhost:8080"&gt;&lt;/script&gt;</code>
+      </p>
+    </main>
+    <script
+      src="/widget.js"
+      data-site-key="demo-site"
+      data-gateway="http://localhost:8080"
+    ></script>
+  </body>
+</html>

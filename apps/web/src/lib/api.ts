@@ -1,6 +1,16 @@
 import { cookies } from "next/headers";
 import { mapCard, mapTicketSummary, type ApiCard, type ApiTicket } from "./mappers";
-import type { AuthUser, SlaState, Ticket, TicketSummary } from "./types";
+import type {
+  AuthUser,
+  ChatMessage,
+  ConversationDetail,
+  ConversationStatus,
+  ConversationSummary,
+  MessageRole,
+  SlaState,
+  Ticket,
+  TicketSummary,
+} from "./types";
 
 export const AUTH_COOKIE = "hd_token";
 
@@ -159,4 +169,98 @@ export async function searchTickets(query: string): Promise<TicketSummary[]> {
       "ok",
     ),
   );
+}
+
+type ApiConversation = {
+  id: string;
+  site_key: string;
+  visitor_id: string;
+  status: string;
+  assignee_id: string;
+  preview: string;
+  created_at: string;
+  updated_at: string;
+};
+
+type ApiMessage = {
+  id: string;
+  conversation_id: string;
+  role: string;
+  body: string;
+  author_id: string;
+  created_at: string;
+};
+
+function mapConversation(c: ApiConversation): ConversationSummary {
+  return {
+    id: c.id,
+    siteKey: c.site_key,
+    visitorId: c.visitor_id,
+    status: (c.status || "unspecified") as ConversationStatus,
+    assigneeId: c.assignee_id || "",
+    preview: c.preview || "",
+    createdAt: c.created_at,
+    updatedAt: c.updated_at,
+  };
+}
+
+function mapMessage(m: ApiMessage): ChatMessage {
+  return {
+    id: m.id,
+    conversationId: m.conversation_id,
+    role: (m.role || "unspecified") as MessageRole,
+    body: m.body,
+    authorId: m.author_id || "",
+    createdAt: m.created_at,
+  };
+}
+
+export async function listConversations(opts?: {
+  status?: string;
+}): Promise<ConversationSummary[]> {
+  const q = new URLSearchParams();
+  if (opts?.status) q.set("status", opts.status);
+  const qs = q.toString();
+  const data = await apiFetch<{ conversations: ApiConversation[] }>(
+    `/conversations${qs ? `?${qs}` : ""}`,
+  );
+  return (data.conversations || []).map(mapConversation);
+}
+
+export async function getConversation(id: string): Promise<ConversationDetail> {
+  const data = await apiFetch<{
+    conversation: ApiConversation;
+    messages: ApiMessage[];
+  }>(`/conversations/${id}`);
+  return {
+    conversation: mapConversation(data.conversation),
+    messages: (data.messages || []).map(mapMessage),
+  };
+}
+
+export async function postConversationMessage(
+  id: string,
+  body: string,
+): Promise<{ message: ChatMessage; conversation: ConversationSummary }> {
+  const data = await apiFetch<{
+    message: ApiMessage;
+    conversation: ApiConversation;
+  }>(`/conversations/${id}/messages`, {
+    method: "POST",
+    body: JSON.stringify({ body }),
+  });
+  return {
+    message: mapMessage(data.message),
+    conversation: mapConversation(data.conversation),
+  };
+}
+
+export async function resolveConversation(
+  id: string,
+): Promise<ConversationSummary> {
+  const data = await apiFetch<{ conversation: ApiConversation }>(
+    `/conversations/${id}/resolve`,
+    { method: "POST", body: "{}" },
+  );
+  return mapConversation(data.conversation);
 }

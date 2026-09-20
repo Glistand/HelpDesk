@@ -40,11 +40,11 @@ export default function LoginForm() {
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-accent font-ui-semibold text-white">
-            H
+            S
           </div>
-          <h1 className="font-ui-semibold text-xl text-primary">Helpdesk</h1>
+          <h1 className="font-ui-semibold text-xl text-primary">Support Desk</h1>
           <p className="mt-1 text-[13px] text-tertiary">
-            Войдите как агент · Event Hub
+            Войдите как агент · беседы из виджета
           </p>
         </div>
         <form

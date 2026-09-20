@@ -56,6 +56,11 @@ services:
     image: ghcr.io/${GHCR_OWNER:-glistand}/helpdesk-search-service:${IMAGE_TAG:-latest}
     build: !reset null
 
+  conversation-service:
+    <<: *pull
+    image: ghcr.io/${GHCR_OWNER:-glistand}/helpdesk-conversation-service:${IMAGE_TAG:-latest}
+    build: !reset null
+
   api-gateway:
     <<: *pull
     image: ghcr.io/${GHCR_OWNER:-glistand}/helpdesk-api-gateway:${IMAGE_TAG:-latest}

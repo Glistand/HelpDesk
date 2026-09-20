@@ -18,11 +18,15 @@ import (
 )
 
 type API struct {
-	c *clients.Clients
+	c       *clients.Clients
+	siteKey string
 }
 
-func New(c *clients.Clients) *API {
-	return &API{c: c}
+func New(c *clients.Clients, siteKey string) *API {
+	if siteKey == "" {
+		siteKey = "demo-site"
+	}
+	return &API{c: c, siteKey: siteKey}
 }
 
 func (a *API) Health(w http.ResponseWriter, r *http.Request) {
@@ -441,7 +445,9 @@ func writeErr(w http.ResponseWriter, code int, msg string) {
 func writeGRPCErr(w http.ResponseWriter, err error) {
 	msg := err.Error()
 	code := http.StatusBadGateway
-	if strings.Contains(msg, "NotFound") || strings.Contains(msg, "not found") {
+	if strings.Contains(msg, "visitor mismatch") || strings.Contains(msg, "site_key mismatch") {
+		code = http.StatusForbidden
+	} else if strings.Contains(msg, "NotFound") || strings.Contains(msg, "not found") {
 		code = http.StatusNotFound
 	} else if strings.Contains(msg, "InvalidArgument") || strings.Contains(msg, "required") {
 		code = http.StatusBadRequest

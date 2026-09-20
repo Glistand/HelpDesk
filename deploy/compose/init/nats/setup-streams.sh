@@ -17,6 +17,7 @@ if ! nats --server "${NATS_URL}" stream info HELP_DESK_EVENTS >/dev/null 2>&1; t
     --subjects "helpdesk.assignment.>" \
     --subjects "helpdesk.notification.>" \
     --subjects "helpdesk.audit.>" \
+    --subjects "helpdesk.conversation.>" \
     --storage file \
     --retention limits \
     --max-msgs=-1 \
@@ -24,7 +25,15 @@ if ! nats --server "${NATS_URL}" stream info HELP_DESK_EVENTS >/dev/null 2>&1; t
     --dupe-window=2m \
     --defaults
 else
-  echo "Stream HELP_DESK_EVENTS already exists"
+  echo "Stream HELP_DESK_EVENTS already exists; ensuring conversation subjects"
+  nats --server "${NATS_URL}" stream edit HELP_DESK_EVENTS \
+    --subjects "helpdesk.ticket.>" \
+    --subjects "helpdesk.sla.>" \
+    --subjects "helpdesk.assignment.>" \
+    --subjects "helpdesk.notification.>" \
+    --subjects "helpdesk.audit.>" \
+    --subjects "helpdesk.conversation.>" \
+    --force || true
 fi
 
 if ! nats --server "${NATS_URL}" stream info HELP_DESK_DLQ >/dev/null 2>&1; then

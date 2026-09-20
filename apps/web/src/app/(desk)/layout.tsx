@@ -1,17 +1,17 @@
 import { AppShell } from "@/components/shell/app-shell";
-import { listTickets } from "@/lib/api";
-import type { TicketSummary } from "@/lib/types";
+import { listConversations } from "@/lib/api";
+import type { ConversationSummary } from "@/lib/types";
 
 export default async function DeskLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  let tickets: TicketSummary[] = [];
+  let conversations: ConversationSummary[] = [];
   try {
-    tickets = await listTickets();
+    conversations = await listConversations();
   } catch {
-    tickets = [];
+    conversations = [];
   }
-  return <AppShell tickets={tickets}>{children}</AppShell>;
+  return <AppShell conversations={conversations}>{children}</AppShell>;
 }

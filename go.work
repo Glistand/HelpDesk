@@ -9,6 +9,7 @@ use (
 	./services/assignment-service
 	./services/audit-service
 	./services/auth-service
+	./services/conversation-service
 	./services/escalation-service
 	./services/notification-service
 	./services/search-service

@@ -1,4 +1,4 @@
-.PHONY: up up-ghcr up-server down logs ps reset nats-streams env web web-build proto build-libs build-services test-go e2e e2e-phase2 e2e-phase3 e2e-phase4 e2e-phase5 e2e-phase6 load-phase6 chaos-phase6
+.PHONY: up up-ghcr up-server down logs ps reset nats-streams env web web-build widget proto build-libs build-services test-go e2e e2e-phase2 e2e-phase3 e2e-phase4 e2e-phase5 e2e-phase6 load-phase6 chaos-phase6 smoke-widget
 
 COMPOSE_FILE := deploy/compose/docker-compose.yml
 COMPOSE_GHCR_FILE := deploy/compose/docker-compose.ghcr.yml
@@ -46,6 +46,12 @@ web:
 web-build:
 	cd apps/web && npm run build
 
+widget:
+	cd apps/widget && npm install && npm run build
+
+smoke-widget:
+	./scripts/smoke-widget.sh
+
 proto:
 	cd api/proto && buf generate
 
@@ -64,6 +70,7 @@ build-services: build-libs
 	go build -o bin/sla-service ./services/sla-service/cmd/sla-service
 	go build -o bin/escalation-service ./services/escalation-service/cmd/escalation-service
 	go build -o bin/search-service ./services/search-service/cmd/search-service
+	go build -o bin/conversation-service ./services/conversation-service/cmd/conversation-service
 	go build -o bin/api-gateway ./services/api-gateway/cmd/api-gateway
 
 test-go:

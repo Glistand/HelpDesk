@@ -1,20 +1,20 @@
 import { Suspense } from "react";
 import { IconRail } from "./icon-rail";
-import { TicketListPanel } from "./ticket-list-panel";
-import type { TicketSummary } from "@/lib/types";
+import { ConversationListPanel } from "./conversation-list-panel";
+import type { ConversationSummary } from "@/lib/types";
 
 export function AppShell({
   children,
-  tickets,
+  conversations,
 }: {
   children: React.ReactNode;
-  tickets: TicketSummary[];
+  conversations: ConversationSummary[];
 }) {
   return (
     <div className="flex h-screen overflow-hidden bg-base">
       <IconRail />
       <Suspense fallback={<ListPanelSkeleton />}>
-        <TicketListPanel initialTickets={tickets} />
+        <ConversationListPanel initialConversations={conversations} />
       </Suspense>
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-base">
         {children}

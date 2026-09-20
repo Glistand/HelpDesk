@@ -51,7 +51,7 @@ services:
     command:
       - |
         set -eu
-        for db in auth ticket assignment sla escalation notification audit; do
+		for db in auth ticket assignment sla escalation notification audit conversation; do
           exists=$$(psql -tAc "SELECT 1 FROM pg_database WHERE datname='$$db'")
           if [ "$$exists" != "1" ]; then
             echo "Creating database $$db"
@@ -291,6 +291,27 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
       OTEL_SERVICE_NAME: search-service
 
+  conversation-service:
+    <<: *app
+    image: ghcr.io/${GHCR_OWNER}/helpdesk-conversation-service:${IMAGE_TAG}
+    depends_on:
+      postgres-init:
+        condition: service_completed_successfully
+      nats-init:
+        condition: service_completed_successfully
+      jaeger:
+        condition: service_started
+    environment:
+      CONVERSATION_GRPC_ADDR: ":50058"
+      CONVERSATION_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/conversation?sslmode=disable
+      NATS_URL: nats://nats:4222
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-inclusionai/ling-3.0-flash-vl:free}
+      OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
+      WIDGET_SITE_KEY: ${WIDGET_SITE_KEY:-demo-site}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      OTEL_SERVICE_NAME: conversation-service
+
   api-gateway:
     <<: *app
     image: ghcr.io/${GHCR_OWNER}/helpdesk-api-gateway:${IMAGE_TAG}
@@ -301,6 +322,7 @@ services:
       - audit-service
       - sla-service
       - search-service
+      - conversation-service
       - jaeger
     environment:
       GATEWAY_HTTP_ADDR: ":8080"
@@ -310,6 +332,8 @@ services:
       AUDIT_GRPC_ADDR: audit-service:50054
       SLA_GRPC_ADDR: sla-service:50055
       SEARCH_GRPC_ADDR: search-service:50057
+      CONVERSATION_GRPC_ADDR: conversation-service:50058
+      WIDGET_SITE_KEY: ${WIDGET_SITE_KEY:-demo-site}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
       OTEL_SERVICE_NAME: api-gateway
     ports:

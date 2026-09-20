@@ -9,8 +9,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Helpdesk Event Hub",
-  description: "Agent console for Helpdesk Event Hub",
+  title: "Support Desk",
+  description: "Agent console for Support Desk conversations",
 };
 
 const themeInitScript = `

@@ -8,7 +8,8 @@ const items = [
   {
     href: "/inbox",
     label: "Inbox",
-    match: (p: string) => p === "/inbox" || p.startsWith("/tickets/"),
+    match: (p: string) =>
+      p === "/inbox" || p.startsWith("/conversations/") || p.startsWith("/tickets/"),
     icon: (
       <path
         d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h10v2H4v-2z"
@@ -18,7 +19,7 @@ const items = [
   },
   {
     href: "/tickets/new",
-    label: "Создать",
+    label: "Тикет",
     match: (p: string) => p === "/tickets/new",
     icon: (
       <path d="M11 5h2v14h-2V5zm-7 7h14v2H4v-2z" fill="currentColor" />
@@ -49,9 +50,9 @@ export function IconRail() {
       <Link
         href="/inbox"
         className="mb-6 flex h-8 w-8 items-center justify-center rounded-md bg-accent font-ui-semibold text-sm text-white"
-        title="Helpdesk"
+        title="Support Desk"
       >
-        H
+        S
       </Link>
 
       <div className="flex flex-1 flex-col gap-1">
