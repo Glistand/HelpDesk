@@ -3,15 +3,16 @@ package config
 import "os"
 
 type Config struct {
-	HTTPAddr              string
-	AuthGRPCAddr          string
-	TicketGRPCAddr        string
-	AssignmentGRPCAddr    string
-	AuditGRPCAddr         string
-	SLAGRPCAddr           string
-	SearchGRPCAddr        string
-	ConversationGRPCAddr  string
-	WidgetSiteKey         string
+	HTTPAddr             string
+	AuthGRPCAddr         string
+	TicketGRPCAddr       string
+	AssignmentGRPCAddr   string
+	AuditGRPCAddr        string
+	SLAGRPCAddr          string
+	SearchGRPCAddr       string
+	ConversationGRPCAddr string
+	ProjectGRPCAddr      string
+	WidgetSiteKey        string
 }
 
 func Load() Config {
@@ -24,6 +25,7 @@ func Load() Config {
 		SLAGRPCAddr:          getenv("SLA_GRPC_ADDR", "localhost:50055"),
 		SearchGRPCAddr:       getenv("SEARCH_GRPC_ADDR", "localhost:50057"),
 		ConversationGRPCAddr: getenv("CONVERSATION_GRPC_ADDR", "localhost:50058"),
+		ProjectGRPCAddr:      getenv("PROJECT_GRPC_ADDR", "localhost:50059"),
 		WidgetSiteKey:        getenv("WIDGET_SITE_KEY", "demo-site"),
 	}
 }

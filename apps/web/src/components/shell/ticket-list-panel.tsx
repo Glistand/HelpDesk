@@ -66,6 +66,7 @@ export function TicketListPanel({ initialTickets }: Props) {
             updatedAt: h.updated_at,
             createdAt: h.updated_at,
             slaState: "ok" as const,
+            source: "manager" as const,
           }),
         );
         setTickets(hits);
@@ -183,7 +184,7 @@ export function TicketListPanel({ initialTickets }: Props) {
                       {ticket.title}
                     </p>
                     <p className="mt-1 truncate text-[11px] text-tertiary">
-                      {ticket.requester || "—"} · {formatRelative(ticket.updatedAt)}
+                      {ticket.source === "bot" ? "Бот" : "Менеджер"} · {ticket.requester || "—"} · {formatRelative(ticket.updatedAt)}
                     </p>
                   </div>
                 </div>

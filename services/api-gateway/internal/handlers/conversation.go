@@ -5,7 +5,9 @@ import (
 	"net/http"
 	"strings"
 
+	authv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/auth/v1"
 	conversationv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/conversation/v1"
+	ticketv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/ticket/v1"
 	"github.com/Glistand/HelpDesk/services/api-gateway/internal/middleware"
 	"github.com/google/uuid"
 )
@@ -137,10 +139,28 @@ func (a *API) WidgetHandoff(w http.ResponseWriter, r *http.Request) {
 		writeGRPCErr(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{
+	out := map[string]any{
 		"conversation":   conversationJSON(resp.GetConversation()),
 		"system_message": messageJSON(resp.GetSystemMessage()),
-	})
+	}
+	if resp.GetConversation() != nil {
+		ticket, ticketErr := a.c.Ticket.CreateTicket(r.Context(), &ticketv1.CreateTicketRequest{
+			Title:          "Запрос менеджера из чата",
+			Description:    resp.GetConversation().GetPreview(),
+			Priority:       ticketv1.TicketPriority_TICKET_PRIORITY_NORMAL,
+			Category:       "chat_handoff",
+			Requester:      resp.GetConversation().GetVisitorId(),
+			Source:         ticketv1.TicketSource_TICKET_SOURCE_BOT,
+			ConversationId: id,
+			CreationReason: "visitor_handoff",
+		})
+		if ticketErr != nil {
+			writeGRPCErr(w, ticketErr)
+			return
+		}
+		out["ticket"] = ticketJSON(ticket.GetTicket())
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
 func (a *API) ListConversations(w http.ResponseWriter, r *http.Request) {
@@ -154,7 +174,11 @@ func (a *API) ListConversations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	items := make([]map[string]any, 0, len(resp.GetConversations()))
+	user := middleware.UserFromContext(r.Context())
 	for _, c := range resp.GetConversations() {
+		if user != nil && user.GetRole() == authv1.Role_ROLE_AGENT && c.GetAssigneeId() != user.GetId() {
+			continue
+		}
 		items = append(items, conversationJSON(c))
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"conversations": items})

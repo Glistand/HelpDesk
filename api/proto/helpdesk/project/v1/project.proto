@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package helpdesk.project.v1;
+
+option go_package = "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/project/v1;projectv1";
+
+// ProjectService manages the singleton profile for one HelpDesk deployment.
+service ProjectService {
+  rpc GetProfile(GetProfileRequest) returns (GetProfileResponse);
+  rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
+}
+
+message ProjectProfile {
+  string name = 1;
+  string description = 2;
+  string domain = 3;
+  string website_url = 4;
+  string support_email = 5;
+  string support_phone = 6;
+  string timezone = 7;
+  string site_key = 8;
+  string bot_instructions = 9;
+  bool auto_create_ticket = 10;
+  string updated_at = 11;
+}
+
+message GetProfileRequest {}
+
+message GetProfileResponse {
+  ProjectProfile profile = 1;
+}
+
+message UpdateProfileRequest {
+  ProjectProfile profile = 1;
+}
+
+message UpdateProfileResponse {
+  ProjectProfile profile = 1;
+}

@@ -6,6 +6,7 @@ export type TicketStatus =
   | "closed";
 
 export type TicketPriority = "low" | "normal" | "high" | "urgent";
+export type TicketSource = "manager" | "bot";
 
 export type SlaState = "ok" | "warning" | "breached" | "cancelled";
 
@@ -54,6 +55,8 @@ export interface Ticket {
   category: string;
   requester: string;
   assignee?: Agent;
+  source: TicketSource;
+  conversationId?: string;
   createdAt: string;
   updatedAt: string;
   sla: TicketSLA;
@@ -72,6 +75,22 @@ export interface TicketSummary {
   createdAt: string;
   updatedAt: string;
   slaState: SlaState;
+  source: TicketSource;
+  conversationId?: string;
+}
+
+export interface ProjectProfile {
+  name: string;
+  description: string;
+  domain: string;
+  websiteUrl: string;
+  supportEmail: string;
+  supportPhone: string;
+  timezone: string;
+  siteKey: string;
+  botInstructions: string;
+  autoCreateTicket: boolean;
+  updatedAt: string;
 }
 
 export interface AuthUser {

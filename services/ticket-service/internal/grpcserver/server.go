@@ -25,12 +25,16 @@ func New(repo *repository.TicketRepo) *Server {
 
 func (s *Server) CreateTicket(ctx context.Context, req *ticketv1.CreateTicketRequest) (*ticketv1.CreateTicketResponse, error) {
 	t, err := s.repo.Create(ctx, repository.CreateInput{
-		Title:         req.GetTitle(),
-		Description:   req.GetDescription(),
-		Priority:      fromProtoPriority(req.GetPriority()),
-		Category:      req.GetCategory(),
-		Requester:     req.GetRequester(),
-		CorrelationID: metadata.CorrelationIDFromContext(ctx),
+		Title:          req.GetTitle(),
+		Description:    req.GetDescription(),
+		Priority:       fromProtoPriority(req.GetPriority()),
+		Category:       req.GetCategory(),
+		Requester:      req.GetRequester(),
+		Source:         fromProtoSource(req.GetSource()),
+		CreatedByID:    req.GetCreatedById(),
+		ConversationID: req.GetConversationId(),
+		CreationReason: req.GetCreationReason(),
+		CorrelationID:  metadata.CorrelationIDFromContext(ctx),
 	})
 	if err != nil {
 		if err == repository.ErrEmptyTitle {
@@ -102,17 +106,35 @@ func (s *Server) AssignTicket(ctx context.Context, req *ticketv1.AssignTicketReq
 
 func toProto(t domain.Ticket) *ticketv1.Ticket {
 	return &ticketv1.Ticket{
-		Id:          t.ID,
-		Title:       t.Title,
-		Description: t.Description,
-		Status:      toProtoStatus(t.Status),
-		Priority:    toProtoPriority(t.Priority),
-		Category:    t.Category,
-		Requester:   t.Requester,
-		AssigneeId:  t.AssigneeID,
-		CreatedAt:   t.CreatedAt.UTC().Format(time.RFC3339),
-		UpdatedAt:   t.UpdatedAt.UTC().Format(time.RFC3339),
+		Id:             t.ID,
+		Title:          t.Title,
+		Description:    t.Description,
+		Status:         toProtoStatus(t.Status),
+		Priority:       toProtoPriority(t.Priority),
+		Category:       t.Category,
+		Requester:      t.Requester,
+		AssigneeId:     t.AssigneeID,
+		Source:         toProtoSource(t.Source),
+		CreatedById:    t.CreatedByID,
+		ConversationId: t.ConversationID,
+		CreationReason: t.CreationReason,
+		CreatedAt:      t.CreatedAt.UTC().Format(time.RFC3339),
+		UpdatedAt:      t.UpdatedAt.UTC().Format(time.RFC3339),
 	}
+}
+
+func toProtoSource(source domain.Source) ticketv1.TicketSource {
+	if source == domain.SourceBot {
+		return ticketv1.TicketSource_TICKET_SOURCE_BOT
+	}
+	return ticketv1.TicketSource_TICKET_SOURCE_MANAGER
+}
+
+func fromProtoSource(source ticketv1.TicketSource) domain.Source {
+	if source == ticketv1.TicketSource_TICKET_SOURCE_BOT {
+		return domain.SourceBot
+	}
+	return domain.SourceManager
 }
 
 func toProtoStatus(s domain.Status) ticketv1.TicketStatus {

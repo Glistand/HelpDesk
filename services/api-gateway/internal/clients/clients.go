@@ -7,6 +7,7 @@ import (
 	auditv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/audit/v1"
 	authv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/auth/v1"
 	conversationv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/conversation/v1"
+	projectv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/project/v1"
 	searchv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/search/v1"
 	slav1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/sla/v1"
 	ticketv1 "github.com/Glistand/HelpDesk/api/gen/go/helpdesk/ticket/v1"
@@ -23,16 +24,17 @@ type Clients struct {
 	SLA          slav1.SLAServiceClient
 	Search       searchv1.SearchServiceClient
 	Conversation conversationv1.ConversationServiceClient
+	Project      projectv1.ProjectServiceClient
 	conns        []*grpc.ClientConn
 }
 
-func Dial(ctx context.Context, authAddr, ticketAddr, assignmentAddr, auditAddr, slaAddr, searchAddr, conversationAddr string) (*Clients, error) {
+func Dial(ctx context.Context, authAddr, ticketAddr, assignmentAddr, auditAddr, slaAddr, searchAddr, conversationAddr, projectAddr string) (*Clients, error) {
 	dial := func(addr string) (*grpc.ClientConn, error) {
 		opts := append([]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}, grpckit.DefaultClientOptions()...)
 		return grpc.NewClient(addr, opts...)
 	}
 
-	addrs := []string{authAddr, ticketAddr, assignmentAddr, auditAddr, slaAddr, searchAddr, conversationAddr}
+	addrs := []string{authAddr, ticketAddr, assignmentAddr, auditAddr, slaAddr, searchAddr, conversationAddr, projectAddr}
 	conns := make([]*grpc.ClientConn, 0, len(addrs))
 	for _, addr := range addrs {
 		c, err := dial(addr)
@@ -53,6 +55,7 @@ func Dial(ctx context.Context, authAddr, ticketAddr, assignmentAddr, auditAddr, 
 		SLA:          slav1.NewSLAServiceClient(conns[4]),
 		Search:       searchv1.NewSearchServiceClient(conns[5]),
 		Conversation: conversationv1.NewConversationServiceClient(conns[6]),
+		Project:      projectv1.NewProjectServiceClient(conns[7]),
 		conns:        conns,
 	}, nil
 }

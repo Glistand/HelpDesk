@@ -27,12 +27,16 @@ func NewTicketRepo(db *sql.DB) *TicketRepo {
 }
 
 type CreateInput struct {
-	Title         string
-	Description   string
-	Priority      domain.Priority
-	Category      string
-	Requester     string
-	CorrelationID string
+	Title          string
+	Description    string
+	Priority       domain.Priority
+	Category       string
+	Requester      string
+	Source         domain.Source
+	CreatedByID    string
+	ConversationID string
+	CreationReason string
+	CorrelationID  string
 }
 
 func (r *TicketRepo) Create(ctx context.Context, in CreateInput) (domain.Ticket, error) {
@@ -43,29 +47,38 @@ func (r *TicketRepo) Create(ctx context.Context, in CreateInput) (domain.Ticket,
 	if in.Priority == "" {
 		in.Priority = domain.PriorityNormal
 	}
+	if in.Source == "" {
+		in.Source = domain.SourceManager
+	}
 
 	now := time.Now().UTC()
 	t := domain.Ticket{
-		ID:          "t-" + uuid.NewString()[:8],
-		Title:       title,
-		Description: strings.TrimSpace(in.Description),
-		Status:      domain.StatusNew,
-		Priority:    in.Priority,
-		Category:    strings.TrimSpace(in.Category),
-		Requester:   strings.TrimSpace(in.Requester),
-		CreatedAt:   now,
-		UpdatedAt:   now,
+		ID:             "t-" + uuid.NewString()[:8],
+		Title:          title,
+		Description:    strings.TrimSpace(in.Description),
+		Status:         domain.StatusNew,
+		Priority:       in.Priority,
+		Category:       strings.TrimSpace(in.Category),
+		Requester:      strings.TrimSpace(in.Requester),
+		Source:         in.Source,
+		CreatedByID:    strings.TrimSpace(in.CreatedByID),
+		ConversationID: strings.TrimSpace(in.ConversationID),
+		CreationReason: strings.TrimSpace(in.CreationReason),
+		CreatedAt:      now,
+		UpdatedAt:      now,
 	}
 
 	payload, err := json.Marshal(map[string]any{
-		"id":          t.ID,
-		"title":       t.Title,
-		"description": t.Description,
-		"status":      t.Status,
-		"priority":    t.Priority,
-		"category":    t.Category,
-		"requester":   t.Requester,
-		"created_at":  t.CreatedAt.Format(time.RFC3339),
+		"id":              t.ID,
+		"title":           t.Title,
+		"description":     t.Description,
+		"status":          t.Status,
+		"priority":        t.Priority,
+		"category":        t.Category,
+		"requester":       t.Requester,
+		"source":          t.Source,
+		"conversation_id": t.ConversationID,
+		"created_at":      t.CreatedAt.Format(time.RFC3339),
 	})
 	if err != nil {
 		return domain.Ticket{}, err
@@ -79,11 +92,18 @@ func (r *TicketRepo) Create(ctx context.Context, in CreateInput) (domain.Ticket,
 
 	_, err = tx.ExecContext(ctx, `
 		INSERT INTO tickets (
-			id, title, description, status, priority, category, requester, assignee_id, created_at, updated_at
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-		t.ID, t.Title, t.Description, t.Status, t.Priority, t.Category, t.Requester, t.AssigneeID, t.CreatedAt, t.UpdatedAt,
+			id, title, description, status, priority, category, requester, assignee_id, source, created_by_id,
+			conversation_id, creation_reason, created_at, updated_at
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+		t.ID, t.Title, t.Description, t.Status, t.Priority, t.Category, t.Requester, t.AssigneeID, t.Source,
+		t.CreatedByID, t.ConversationID, t.CreationReason, t.CreatedAt, t.UpdatedAt,
 	)
 	if err != nil {
+		if in.Source == domain.SourceBot && in.ConversationID != "" {
+			if existing, getErr := r.GetByConversation(ctx, in.ConversationID); getErr == nil {
+				return existing, nil
+			}
+		}
 		return domain.Ticket{}, fmt.Errorf("insert ticket: %w", err)
 	}
 
@@ -103,9 +123,21 @@ func (r *TicketRepo) Create(ctx context.Context, in CreateInput) (domain.Ticket,
 	return t, nil
 }
 
+func (r *TicketRepo) GetByConversation(ctx context.Context, conversationID string) (domain.Ticket, error) {
+	row := r.db.QueryRowContext(ctx, `
+		SELECT id, title, description, status, priority, category, requester, assignee_id,
+			source, created_by_id, conversation_id, creation_reason, created_at, updated_at
+		FROM tickets WHERE conversation_id = $1 ORDER BY created_at ASC LIMIT 1`, conversationID)
+	t, err := scanTicket(row)
+	if errors.Is(err, sql.ErrNoRows) {
+		return domain.Ticket{}, ErrNotFound
+	}
+	return t, err
+}
+
 func (r *TicketRepo) Get(ctx context.Context, id string) (domain.Ticket, error) {
 	row := r.db.QueryRowContext(ctx, `
-		SELECT id, title, description, status, priority, category, requester, assignee_id, created_at, updated_at
+		SELECT id, title, description, status, priority, category, requester, assignee_id, source, created_by_id, conversation_id, creation_reason, created_at, updated_at
 		FROM tickets WHERE id = $1`, id)
 	t, err := scanTicket(row)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -119,7 +151,7 @@ func (r *TicketRepo) List(ctx context.Context, status domain.Status, assigneeID 
 		limit = 50
 	}
 	q := `
-		SELECT id, title, description, status, priority, category, requester, assignee_id, created_at, updated_at
+		SELECT id, title, description, status, priority, category, requester, assignee_id, source, created_by_id, conversation_id, creation_reason, created_at, updated_at
 		FROM tickets WHERE 1=1`
 	args := []any{}
 	n := 1
@@ -174,7 +206,7 @@ func (r *TicketRepo) UpdateStatus(ctx context.Context, id string, status domain.
 	}
 
 	row := tx.QueryRowContext(ctx, `
-		SELECT id, title, description, status, priority, category, requester, assignee_id, created_at, updated_at
+		SELECT id, title, description, status, priority, category, requester, assignee_id, source, created_by_id, conversation_id, creation_reason, created_at, updated_at
 		FROM tickets WHERE id = $1`, id)
 	t, err := scanTicket(row)
 	if err != nil {
@@ -230,7 +262,7 @@ func (r *TicketRepo) Assign(ctx context.Context, id, assigneeID, correlationID s
 	}
 
 	row := tx.QueryRowContext(ctx, `
-		SELECT id, title, description, status, priority, category, requester, assignee_id, created_at, updated_at
+		SELECT id, title, description, status, priority, category, requester, assignee_id, source, created_by_id, conversation_id, creation_reason, created_at, updated_at
 		FROM tickets WHERE id = $1`, id)
 	t, err := scanTicket(row)
 	if err != nil {
@@ -297,7 +329,7 @@ func scanTicket(s scanner) (domain.Ticket, error) {
 	var status, priority string
 	err := s.Scan(
 		&t.ID, &t.Title, &t.Description, &status, &priority,
-		&t.Category, &t.Requester, &t.AssigneeID, &t.CreatedAt, &t.UpdatedAt,
+		&t.Category, &t.Requester, &t.AssigneeID, &t.Source, &t.CreatedByID, &t.ConversationID, &t.CreationReason, &t.CreatedAt, &t.UpdatedAt,
 	)
 	if err != nil {
 		return domain.Ticket{}, err

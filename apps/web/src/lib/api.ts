@@ -10,6 +10,7 @@ import type {
   SlaState,
   Ticket,
   TicketSummary,
+  ProjectProfile,
 } from "./types";
 
 export const AUTH_COOKIE = "hd_token";
@@ -20,6 +21,20 @@ export function gatewayURL(): string {
     process.env.NEXT_PUBLIC_GATEWAY_URL ||
     "http://localhost:8080"
   );
+}
+
+export async function getProject(): Promise<ProjectProfile> {
+  const data = await apiFetch<{
+    name: string; description: string; domain: string; website_url: string;
+    support_email: string; support_phone: string; timezone: string; site_key: string;
+    bot_instructions: string; auto_create_ticket: boolean; updated_at: string;
+  }>("/project");
+  return {
+    name: data.name, description: data.description, domain: data.domain,
+    websiteUrl: data.website_url, supportEmail: data.support_email, supportPhone: data.support_phone,
+    timezone: data.timezone, siteKey: data.site_key, botInstructions: data.bot_instructions,
+    autoCreateTicket: data.auto_create_ticket, updatedAt: data.updated_at,
+  };
 }
 
 async function token(): Promise<string | undefined> {

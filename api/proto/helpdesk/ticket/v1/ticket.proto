@@ -30,6 +30,12 @@ enum TicketPriority {
   TICKET_PRIORITY_URGENT = 4;
 }
 
+enum TicketSource {
+  TICKET_SOURCE_UNSPECIFIED = 0;
+  TICKET_SOURCE_MANAGER = 1;
+  TICKET_SOURCE_BOT = 2;
+}
+
 message Ticket {
   string id = 1;
   string title = 2;
@@ -41,6 +47,10 @@ message Ticket {
   string assignee_id = 8;
   string created_at = 9;
   string updated_at = 10;
+  TicketSource source = 11;
+  string created_by_id = 12;
+  string conversation_id = 13;
+  string creation_reason = 14;
 }
 
 message CreateTicketRequest {
@@ -49,6 +59,10 @@ message CreateTicketRequest {
   TicketPriority priority = 3;
   string category = 4;
   string requester = 5;
+  TicketSource source = 6;
+  string created_by_id = 7;
+  string conversation_id = 8;
+  string creation_reason = 9;
 }
 
 message CreateTicketResponse {

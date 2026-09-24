@@ -5,6 +5,7 @@ import type {
   TimelineKind,
   Ticket,
   TicketPriority,
+  TicketSource,
   TicketStatus,
   TicketSummary,
 } from "./types";
@@ -20,6 +21,8 @@ type ApiTicket = {
   assignee_id: string;
   created_at: string;
   updated_at: string;
+  source?: string;
+  conversation_id?: string;
 };
 
 type ApiSLA = {
@@ -82,6 +85,10 @@ function asPriority(p: string): TicketPriority {
   }
 }
 
+function asSource(source: string | undefined): TicketSource {
+  return source === "bot" ? "bot" : "manager";
+}
+
 function asSlaState(s: string | undefined): SlaState {
   switch (s) {
     case "ok":
@@ -131,6 +138,8 @@ export function mapTicketSummary(
     createdAt: t.created_at,
     updatedAt: t.updated_at,
     slaState,
+    source: asSource(t.source),
+    conversationId: t.conversation_id || undefined,
   };
 }
 
@@ -165,6 +174,8 @@ export function mapCard(card: ApiCard): Ticket {
     priority: asPriority(card.ticket.priority),
     category: card.ticket.category,
     requester: card.ticket.requester,
+    source: asSource(card.ticket.source),
+    conversationId: card.ticket.conversation_id || undefined,
     assignee,
     createdAt: card.ticket.created_at,
     updatedAt: card.ticket.updated_at,

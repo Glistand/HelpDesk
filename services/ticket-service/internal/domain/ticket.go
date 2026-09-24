@@ -21,17 +21,28 @@ const (
 	PriorityUrgent Priority = "urgent"
 )
 
+type Source string
+
+const (
+	SourceManager Source = "manager"
+	SourceBot     Source = "bot"
+)
+
 type Ticket struct {
-	ID          string
-	Title       string
-	Description string
-	Status      Status
-	Priority    Priority
-	Category    string
-	Requester   string
-	AssigneeID  string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	ID             string
+	Title          string
+	Description    string
+	Status         Status
+	Priority       Priority
+	Category       string
+	Requester      string
+	AssigneeID     string
+	Source         Source
+	CreatedByID    string
+	ConversationID string
+	CreationReason string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 type OutboxEvent struct {

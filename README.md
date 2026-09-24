@@ -1,6 +1,6 @@
-# HelpDesk — Support Desk
+# HelpDesk — Universal Support Desk
 
-Встраиваемый **чат-виджет** для сайтов + **агентская консоль**. Посетитель пишет в пузырь справа снизу → бот (OpenRouter) отвечает → при необходимости handoff → агент отвечает в UI.
+Встраиваемый **чат-виджет** для сайтов + **консоль support desk**. Один запуск обслуживает один проект: профиль проекта первоначально заполняется из `PROJECT_*`, затем редактируется через API/консоль. Посетитель пишет в пузырь справа снизу → бот (OpenRouter) отвечает → handoff создаёт связанный bot-тикет → менеджер отвечает в UI.
 
 Тикеты/SLA/escalation остаются в compose как legacy Event Hub, но primary UX — **беседы**.
 
@@ -12,6 +12,7 @@
 |-----------|------------|
 | `apps/widget` | FAB + чат; `<script src="…/widget.js" data-site-key="demo-site" data-gateway="http://localhost:8080">` |
 | `conversation-service` | сессии/сообщения, OpenRouter, NATS `helpdesk.conversation.>` |
+| `project-service` | singleton-профиль проекта, seeded из env при первом запуске |
 | `api-gateway` | публичный `/widget/*` + JWT `/conversations*` |
 | `apps/web` | inbox бесед, тред, ответ агента |
 
@@ -26,6 +27,16 @@
 - SLA и escalation как отдельные сервисы *(не в primary UX)*
 - BFF / API Gateway (HTTP снаружи → gRPC внутрь)
 - Локальный и первый деплой — **Docker Compose**
+
+## Профиль проекта и роли
+
+Каждый Compose-стек — отдельный проект, а не tenant внутри общей БД. При первом запуске
+`project-service` сохраняет значения `PROJECT_*` из `.env`; последующие перезапуски их не
+перезаписывают. Пример по умолчанию — SalonPro, платформа записи и управления салонами красоты.
+
+Роль `admin` видит всю очередь и меняет профиль проекта. Роль `agent` получает в API только
+назначенные ей тикеты и чаты. Тикеты содержат источник `manager` или `bot` и могут хранить
+связанный `conversation_id`.
 
 ## Стек
 

@@ -78,12 +78,18 @@ func (a *API) CreateTicket(w http.ResponseWriter, r *http.Request) {
 			body.Requester = u.GetName()
 		}
 	}
+	createdByID := ""
+	if u := middleware.UserFromContext(r.Context()); u != nil {
+		createdByID = u.GetId()
+	}
 	resp, err := a.c.Ticket.CreateTicket(r.Context(), &ticketv1.CreateTicketRequest{
 		Title:       body.Title,
 		Description: body.Description,
 		Priority:    parsePriority(body.Priority),
 		Category:    body.Category,
 		Requester:   body.Requester,
+		Source:      ticketv1.TicketSource_TICKET_SOURCE_MANAGER,
+		CreatedById: createdByID,
 	})
 	if err != nil {
 		writeGRPCErr(w, err)
@@ -95,6 +101,9 @@ func (a *API) CreateTicket(w http.ResponseWriter, r *http.Request) {
 func (a *API) ListTickets(w http.ResponseWriter, r *http.Request) {
 	statusQ := r.URL.Query().Get("status")
 	assignee := r.URL.Query().Get("assignee_id")
+	if user := middleware.UserFromContext(r.Context()); user != nil && user.GetRole() == authv1.Role_ROLE_AGENT {
+		assignee = user.GetId()
+	}
 	resp, err := a.c.Ticket.ListTickets(r.Context(), &ticketv1.ListTicketsRequest{
 		Status:     parseStatus(statusQ),
 		AssigneeId: assignee,
@@ -176,12 +185,12 @@ func (a *API) GetTicketCard(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	var (
-		ticketResp *ticketv1.GetTicketResponse
-		assignResp *assignmentv1.GetAssignmentResponse
-		slaResp    *slav1.GetSLAResponse
-		tlResp     *auditv1.GetTimelineResponse
+		ticketResp                          *ticketv1.GetTicketResponse
+		assignResp                          *assignmentv1.GetAssignmentResponse
+		slaResp                             *slav1.GetSLAResponse
+		tlResp                              *auditv1.GetTimelineResponse
 		ticketErr, assignErr, slaErr, tlErr error
-		wg         sync.WaitGroup
+		wg                                  sync.WaitGroup
 	)
 	wg.Add(4)
 	go func() {
@@ -337,17 +346,28 @@ func (a *API) UpdateTicketStatus(w http.ResponseWriter, r *http.Request) {
 
 func ticketJSON(t *ticketv1.Ticket) map[string]any {
 	return map[string]any{
-		"id":          t.GetId(),
-		"title":       t.GetTitle(),
-		"description": t.GetDescription(),
-		"status":      statusString(t.GetStatus()),
-		"priority":    priorityString(t.GetPriority()),
-		"category":    t.GetCategory(),
-		"requester":   t.GetRequester(),
-		"assignee_id": t.GetAssigneeId(),
-		"created_at":  t.GetCreatedAt(),
-		"updated_at":  t.GetUpdatedAt(),
+		"id":              t.GetId(),
+		"title":           t.GetTitle(),
+		"description":     t.GetDescription(),
+		"status":          statusString(t.GetStatus()),
+		"priority":        priorityString(t.GetPriority()),
+		"category":        t.GetCategory(),
+		"requester":       t.GetRequester(),
+		"assignee_id":     t.GetAssigneeId(),
+		"source":          ticketSourceString(t.GetSource()),
+		"created_by_id":   t.GetCreatedById(),
+		"conversation_id": t.GetConversationId(),
+		"creation_reason": t.GetCreationReason(),
+		"created_at":      t.GetCreatedAt(),
+		"updated_at":      t.GetUpdatedAt(),
 	}
+}
+
+func ticketSourceString(source ticketv1.TicketSource) string {
+	if source == ticketv1.TicketSource_TICKET_SOURCE_BOT {
+		return "bot"
+	}
+	return "manager"
 }
 
 func userJSON(u *authv1.User) map[string]any {

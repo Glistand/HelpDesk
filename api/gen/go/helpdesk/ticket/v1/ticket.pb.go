@@ -134,20 +134,73 @@ func (TicketPriority) EnumDescriptor() ([]byte, []int) {
 	return file_helpdesk_ticket_v1_ticket_proto_rawDescGZIP(), []int{1}
 }
 
+type TicketSource int32
+
+const (
+	TicketSource_TICKET_SOURCE_UNSPECIFIED TicketSource = 0
+	TicketSource_TICKET_SOURCE_MANAGER     TicketSource = 1
+	TicketSource_TICKET_SOURCE_BOT         TicketSource = 2
+)
+
+// Enum value maps for TicketSource.
+var (
+	TicketSource_name = map[int32]string{
+		0: "TICKET_SOURCE_UNSPECIFIED",
+		1: "TICKET_SOURCE_MANAGER",
+		2: "TICKET_SOURCE_BOT",
+	}
+	TicketSource_value = map[string]int32{
+		"TICKET_SOURCE_UNSPECIFIED": 0,
+		"TICKET_SOURCE_MANAGER":     1,
+		"TICKET_SOURCE_BOT":         2,
+	}
+)
+
+func (x TicketSource) Enum() *TicketSource {
+	p := new(TicketSource)
+	*p = x
+	return p
+}
+
+func (x TicketSource) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (TicketSource) Descriptor() protoreflect.EnumDescriptor {
+	return file_helpdesk_ticket_v1_ticket_proto_enumTypes[2].Descriptor()
+}
+
+func (TicketSource) Type() protoreflect.EnumType {
+	return &file_helpdesk_ticket_v1_ticket_proto_enumTypes[2]
+}
+
+func (x TicketSource) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use TicketSource.Descriptor instead.
+func (TicketSource) EnumDescriptor() ([]byte, []int) {
+	return file_helpdesk_ticket_v1_ticket_proto_rawDescGZIP(), []int{2}
+}
+
 type Ticket struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	Status        TicketStatus           `protobuf:"varint,4,opt,name=status,proto3,enum=helpdesk.ticket.v1.TicketStatus" json:"status,omitempty"`
-	Priority      TicketPriority         `protobuf:"varint,5,opt,name=priority,proto3,enum=helpdesk.ticket.v1.TicketPriority" json:"priority,omitempty"`
-	Category      string                 `protobuf:"bytes,6,opt,name=category,proto3" json:"category,omitempty"`
-	Requester     string                 `protobuf:"bytes,7,opt,name=requester,proto3" json:"requester,omitempty"`
-	AssigneeId    string                 `protobuf:"bytes,8,opt,name=assignee_id,json=assigneeId,proto3" json:"assignee_id,omitempty"`
-	CreatedAt     string                 `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt     string                 `protobuf:"bytes,10,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Title          string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Description    string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	Status         TicketStatus           `protobuf:"varint,4,opt,name=status,proto3,enum=helpdesk.ticket.v1.TicketStatus" json:"status,omitempty"`
+	Priority       TicketPriority         `protobuf:"varint,5,opt,name=priority,proto3,enum=helpdesk.ticket.v1.TicketPriority" json:"priority,omitempty"`
+	Category       string                 `protobuf:"bytes,6,opt,name=category,proto3" json:"category,omitempty"`
+	Requester      string                 `protobuf:"bytes,7,opt,name=requester,proto3" json:"requester,omitempty"`
+	AssigneeId     string                 `protobuf:"bytes,8,opt,name=assignee_id,json=assigneeId,proto3" json:"assignee_id,omitempty"`
+	CreatedAt      string                 `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt      string                 `protobuf:"bytes,10,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	Source         TicketSource           `protobuf:"varint,11,opt,name=source,proto3,enum=helpdesk.ticket.v1.TicketSource" json:"source,omitempty"`
+	CreatedById    string                 `protobuf:"bytes,12,opt,name=created_by_id,json=createdById,proto3" json:"created_by_id,omitempty"`
+	ConversationId string                 `protobuf:"bytes,13,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
+	CreationReason string                 `protobuf:"bytes,14,opt,name=creation_reason,json=creationReason,proto3" json:"creation_reason,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Ticket) Reset() {
@@ -250,15 +303,47 @@ func (x *Ticket) GetUpdatedAt() string {
 	return ""
 }
 
+func (x *Ticket) GetSource() TicketSource {
+	if x != nil {
+		return x.Source
+	}
+	return TicketSource_TICKET_SOURCE_UNSPECIFIED
+}
+
+func (x *Ticket) GetCreatedById() string {
+	if x != nil {
+		return x.CreatedById
+	}
+	return ""
+}
+
+func (x *Ticket) GetConversationId() string {
+	if x != nil {
+		return x.ConversationId
+	}
+	return ""
+}
+
+func (x *Ticket) GetCreationReason() string {
+	if x != nil {
+		return x.CreationReason
+	}
+	return ""
+}
+
 type CreateTicketRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Title         string                 `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
-	Description   string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
-	Priority      TicketPriority         `protobuf:"varint,3,opt,name=priority,proto3,enum=helpdesk.ticket.v1.TicketPriority" json:"priority,omitempty"`
-	Category      string                 `protobuf:"bytes,4,opt,name=category,proto3" json:"category,omitempty"`
-	Requester     string                 `protobuf:"bytes,5,opt,name=requester,proto3" json:"requester,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Title          string                 `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
+	Description    string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
+	Priority       TicketPriority         `protobuf:"varint,3,opt,name=priority,proto3,enum=helpdesk.ticket.v1.TicketPriority" json:"priority,omitempty"`
+	Category       string                 `protobuf:"bytes,4,opt,name=category,proto3" json:"category,omitempty"`
+	Requester      string                 `protobuf:"bytes,5,opt,name=requester,proto3" json:"requester,omitempty"`
+	Source         TicketSource           `protobuf:"varint,6,opt,name=source,proto3,enum=helpdesk.ticket.v1.TicketSource" json:"source,omitempty"`
+	CreatedById    string                 `protobuf:"bytes,7,opt,name=created_by_id,json=createdById,proto3" json:"created_by_id,omitempty"`
+	ConversationId string                 `protobuf:"bytes,8,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
+	CreationReason string                 `protobuf:"bytes,9,opt,name=creation_reason,json=creationReason,proto3" json:"creation_reason,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *CreateTicketRequest) Reset() {
@@ -322,6 +407,34 @@ func (x *CreateTicketRequest) GetCategory() string {
 func (x *CreateTicketRequest) GetRequester() string {
 	if x != nil {
 		return x.Requester
+	}
+	return ""
+}
+
+func (x *CreateTicketRequest) GetSource() TicketSource {
+	if x != nil {
+		return x.Source
+	}
+	return TicketSource_TICKET_SOURCE_UNSPECIFIED
+}
+
+func (x *CreateTicketRequest) GetCreatedById() string {
+	if x != nil {
+		return x.CreatedById
+	}
+	return ""
+}
+
+func (x *CreateTicketRequest) GetConversationId() string {
+	if x != nil {
+		return x.ConversationId
+	}
+	return ""
+}
+
+func (x *CreateTicketRequest) GetCreationReason() string {
+	if x != nil {
+		return x.CreationReason
 	}
 	return ""
 }
@@ -776,7 +889,7 @@ var File_helpdesk_ticket_v1_ticket_proto protoreflect.FileDescriptor
 
 const file_helpdesk_ticket_v1_ticket_proto_rawDesc = "" +
 	"\n" +
-	"\x1fhelpdesk/ticket/v1/ticket.proto\x12\x12helpdesk.ticket.v1\"\xe3\x02\n" +
+	"\x1fhelpdesk/ticket/v1/ticket.proto\x12\x12helpdesk.ticket.v1\"\x93\x04\n" +
 	"\x06Ticket\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
@@ -791,13 +904,21 @@ const file_helpdesk_ticket_v1_ticket_proto_rawDesc = "" +
 	"created_at\x18\t \x01(\tR\tcreatedAt\x12\x1d\n" +
 	"\n" +
 	"updated_at\x18\n" +
-	" \x01(\tR\tupdatedAt\"\xc7\x01\n" +
+	" \x01(\tR\tupdatedAt\x128\n" +
+	"\x06source\x18\v \x01(\x0e2 .helpdesk.ticket.v1.TicketSourceR\x06source\x12\"\n" +
+	"\rcreated_by_id\x18\f \x01(\tR\vcreatedById\x12'\n" +
+	"\x0fconversation_id\x18\r \x01(\tR\x0econversationId\x12'\n" +
+	"\x0fcreation_reason\x18\x0e \x01(\tR\x0ecreationReason\"\xf7\x02\n" +
 	"\x13CreateTicketRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12>\n" +
 	"\bpriority\x18\x03 \x01(\x0e2\".helpdesk.ticket.v1.TicketPriorityR\bpriority\x12\x1a\n" +
 	"\bcategory\x18\x04 \x01(\tR\bcategory\x12\x1c\n" +
-	"\trequester\x18\x05 \x01(\tR\trequester\"J\n" +
+	"\trequester\x18\x05 \x01(\tR\trequester\x128\n" +
+	"\x06source\x18\x06 \x01(\x0e2 .helpdesk.ticket.v1.TicketSourceR\x06source\x12\"\n" +
+	"\rcreated_by_id\x18\a \x01(\tR\vcreatedById\x12'\n" +
+	"\x0fconversation_id\x18\b \x01(\tR\x0econversationId\x12'\n" +
+	"\x0fcreation_reason\x18\t \x01(\tR\x0ecreationReason\"J\n" +
 	"\x14CreateTicketResponse\x122\n" +
 	"\x06ticket\x18\x01 \x01(\v2\x1a.helpdesk.ticket.v1.TicketR\x06ticket\"\"\n" +
 	"\x10GetTicketRequest\x12\x0e\n" +
@@ -837,7 +958,11 @@ const file_helpdesk_ticket_v1_ticket_proto_rawDesc = "" +
 	"\x13TICKET_PRIORITY_LOW\x10\x01\x12\x1a\n" +
 	"\x16TICKET_PRIORITY_NORMAL\x10\x02\x12\x18\n" +
 	"\x14TICKET_PRIORITY_HIGH\x10\x03\x12\x1a\n" +
-	"\x16TICKET_PRIORITY_URGENT\x10\x042\x84\x04\n" +
+	"\x16TICKET_PRIORITY_URGENT\x10\x04*_\n" +
+	"\fTicketSource\x12\x1d\n" +
+	"\x19TICKET_SOURCE_UNSPECIFIED\x10\x00\x12\x19\n" +
+	"\x15TICKET_SOURCE_MANAGER\x10\x01\x12\x15\n" +
+	"\x11TICKET_SOURCE_BOT\x10\x022\x84\x04\n" +
 	"\rTicketService\x12a\n" +
 	"\fCreateTicket\x12'.helpdesk.ticket.v1.CreateTicketRequest\x1a(.helpdesk.ticket.v1.CreateTicketResponse\x12X\n" +
 	"\tGetTicket\x12$.helpdesk.ticket.v1.GetTicketRequest\x1a%.helpdesk.ticket.v1.GetTicketResponse\x12^\n" +
@@ -857,49 +982,52 @@ func file_helpdesk_ticket_v1_ticket_proto_rawDescGZIP() []byte {
 	return file_helpdesk_ticket_v1_ticket_proto_rawDescData
 }
 
-var file_helpdesk_ticket_v1_ticket_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_helpdesk_ticket_v1_ticket_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_helpdesk_ticket_v1_ticket_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_helpdesk_ticket_v1_ticket_proto_goTypes = []any{
 	(TicketStatus)(0),                  // 0: helpdesk.ticket.v1.TicketStatus
 	(TicketPriority)(0),                // 1: helpdesk.ticket.v1.TicketPriority
-	(*Ticket)(nil),                     // 2: helpdesk.ticket.v1.Ticket
-	(*CreateTicketRequest)(nil),        // 3: helpdesk.ticket.v1.CreateTicketRequest
-	(*CreateTicketResponse)(nil),       // 4: helpdesk.ticket.v1.CreateTicketResponse
-	(*GetTicketRequest)(nil),           // 5: helpdesk.ticket.v1.GetTicketRequest
-	(*GetTicketResponse)(nil),          // 6: helpdesk.ticket.v1.GetTicketResponse
-	(*ListTicketsRequest)(nil),         // 7: helpdesk.ticket.v1.ListTicketsRequest
-	(*ListTicketsResponse)(nil),        // 8: helpdesk.ticket.v1.ListTicketsResponse
-	(*UpdateTicketStatusRequest)(nil),  // 9: helpdesk.ticket.v1.UpdateTicketStatusRequest
-	(*UpdateTicketStatusResponse)(nil), // 10: helpdesk.ticket.v1.UpdateTicketStatusResponse
-	(*AssignTicketRequest)(nil),        // 11: helpdesk.ticket.v1.AssignTicketRequest
-	(*AssignTicketResponse)(nil),       // 12: helpdesk.ticket.v1.AssignTicketResponse
+	(TicketSource)(0),                  // 2: helpdesk.ticket.v1.TicketSource
+	(*Ticket)(nil),                     // 3: helpdesk.ticket.v1.Ticket
+	(*CreateTicketRequest)(nil),        // 4: helpdesk.ticket.v1.CreateTicketRequest
+	(*CreateTicketResponse)(nil),       // 5: helpdesk.ticket.v1.CreateTicketResponse
+	(*GetTicketRequest)(nil),           // 6: helpdesk.ticket.v1.GetTicketRequest
+	(*GetTicketResponse)(nil),          // 7: helpdesk.ticket.v1.GetTicketResponse
+	(*ListTicketsRequest)(nil),         // 8: helpdesk.ticket.v1.ListTicketsRequest
+	(*ListTicketsResponse)(nil),        // 9: helpdesk.ticket.v1.ListTicketsResponse
+	(*UpdateTicketStatusRequest)(nil),  // 10: helpdesk.ticket.v1.UpdateTicketStatusRequest
+	(*UpdateTicketStatusResponse)(nil), // 11: helpdesk.ticket.v1.UpdateTicketStatusResponse
+	(*AssignTicketRequest)(nil),        // 12: helpdesk.ticket.v1.AssignTicketRequest
+	(*AssignTicketResponse)(nil),       // 13: helpdesk.ticket.v1.AssignTicketResponse
 }
 var file_helpdesk_ticket_v1_ticket_proto_depIdxs = []int32{
 	0,  // 0: helpdesk.ticket.v1.Ticket.status:type_name -> helpdesk.ticket.v1.TicketStatus
 	1,  // 1: helpdesk.ticket.v1.Ticket.priority:type_name -> helpdesk.ticket.v1.TicketPriority
-	1,  // 2: helpdesk.ticket.v1.CreateTicketRequest.priority:type_name -> helpdesk.ticket.v1.TicketPriority
-	2,  // 3: helpdesk.ticket.v1.CreateTicketResponse.ticket:type_name -> helpdesk.ticket.v1.Ticket
-	2,  // 4: helpdesk.ticket.v1.GetTicketResponse.ticket:type_name -> helpdesk.ticket.v1.Ticket
-	0,  // 5: helpdesk.ticket.v1.ListTicketsRequest.status:type_name -> helpdesk.ticket.v1.TicketStatus
-	2,  // 6: helpdesk.ticket.v1.ListTicketsResponse.tickets:type_name -> helpdesk.ticket.v1.Ticket
-	0,  // 7: helpdesk.ticket.v1.UpdateTicketStatusRequest.status:type_name -> helpdesk.ticket.v1.TicketStatus
-	2,  // 8: helpdesk.ticket.v1.UpdateTicketStatusResponse.ticket:type_name -> helpdesk.ticket.v1.Ticket
-	2,  // 9: helpdesk.ticket.v1.AssignTicketResponse.ticket:type_name -> helpdesk.ticket.v1.Ticket
-	3,  // 10: helpdesk.ticket.v1.TicketService.CreateTicket:input_type -> helpdesk.ticket.v1.CreateTicketRequest
-	5,  // 11: helpdesk.ticket.v1.TicketService.GetTicket:input_type -> helpdesk.ticket.v1.GetTicketRequest
-	7,  // 12: helpdesk.ticket.v1.TicketService.ListTickets:input_type -> helpdesk.ticket.v1.ListTicketsRequest
-	9,  // 13: helpdesk.ticket.v1.TicketService.UpdateTicketStatus:input_type -> helpdesk.ticket.v1.UpdateTicketStatusRequest
-	11, // 14: helpdesk.ticket.v1.TicketService.AssignTicket:input_type -> helpdesk.ticket.v1.AssignTicketRequest
-	4,  // 15: helpdesk.ticket.v1.TicketService.CreateTicket:output_type -> helpdesk.ticket.v1.CreateTicketResponse
-	6,  // 16: helpdesk.ticket.v1.TicketService.GetTicket:output_type -> helpdesk.ticket.v1.GetTicketResponse
-	8,  // 17: helpdesk.ticket.v1.TicketService.ListTickets:output_type -> helpdesk.ticket.v1.ListTicketsResponse
-	10, // 18: helpdesk.ticket.v1.TicketService.UpdateTicketStatus:output_type -> helpdesk.ticket.v1.UpdateTicketStatusResponse
-	12, // 19: helpdesk.ticket.v1.TicketService.AssignTicket:output_type -> helpdesk.ticket.v1.AssignTicketResponse
-	15, // [15:20] is the sub-list for method output_type
-	10, // [10:15] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	2,  // 2: helpdesk.ticket.v1.Ticket.source:type_name -> helpdesk.ticket.v1.TicketSource
+	1,  // 3: helpdesk.ticket.v1.CreateTicketRequest.priority:type_name -> helpdesk.ticket.v1.TicketPriority
+	2,  // 4: helpdesk.ticket.v1.CreateTicketRequest.source:type_name -> helpdesk.ticket.v1.TicketSource
+	3,  // 5: helpdesk.ticket.v1.CreateTicketResponse.ticket:type_name -> helpdesk.ticket.v1.Ticket
+	3,  // 6: helpdesk.ticket.v1.GetTicketResponse.ticket:type_name -> helpdesk.ticket.v1.Ticket
+	0,  // 7: helpdesk.ticket.v1.ListTicketsRequest.status:type_name -> helpdesk.ticket.v1.TicketStatus
+	3,  // 8: helpdesk.ticket.v1.ListTicketsResponse.tickets:type_name -> helpdesk.ticket.v1.Ticket
+	0,  // 9: helpdesk.ticket.v1.UpdateTicketStatusRequest.status:type_name -> helpdesk.ticket.v1.TicketStatus
+	3,  // 10: helpdesk.ticket.v1.UpdateTicketStatusResponse.ticket:type_name -> helpdesk.ticket.v1.Ticket
+	3,  // 11: helpdesk.ticket.v1.AssignTicketResponse.ticket:type_name -> helpdesk.ticket.v1.Ticket
+	4,  // 12: helpdesk.ticket.v1.TicketService.CreateTicket:input_type -> helpdesk.ticket.v1.CreateTicketRequest
+	6,  // 13: helpdesk.ticket.v1.TicketService.GetTicket:input_type -> helpdesk.ticket.v1.GetTicketRequest
+	8,  // 14: helpdesk.ticket.v1.TicketService.ListTickets:input_type -> helpdesk.ticket.v1.ListTicketsRequest
+	10, // 15: helpdesk.ticket.v1.TicketService.UpdateTicketStatus:input_type -> helpdesk.ticket.v1.UpdateTicketStatusRequest
+	12, // 16: helpdesk.ticket.v1.TicketService.AssignTicket:input_type -> helpdesk.ticket.v1.AssignTicketRequest
+	5,  // 17: helpdesk.ticket.v1.TicketService.CreateTicket:output_type -> helpdesk.ticket.v1.CreateTicketResponse
+	7,  // 18: helpdesk.ticket.v1.TicketService.GetTicket:output_type -> helpdesk.ticket.v1.GetTicketResponse
+	9,  // 19: helpdesk.ticket.v1.TicketService.ListTickets:output_type -> helpdesk.ticket.v1.ListTicketsResponse
+	11, // 20: helpdesk.ticket.v1.TicketService.UpdateTicketStatus:output_type -> helpdesk.ticket.v1.UpdateTicketStatusResponse
+	13, // 21: helpdesk.ticket.v1.TicketService.AssignTicket:output_type -> helpdesk.ticket.v1.AssignTicketResponse
+	17, // [17:22] is the sub-list for method output_type
+	12, // [12:17] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_helpdesk_ticket_v1_ticket_proto_init() }
@@ -912,7 +1040,7 @@ func file_helpdesk_ticket_v1_ticket_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_helpdesk_ticket_v1_ticket_proto_rawDesc), len(file_helpdesk_ticket_v1_ticket_proto_rawDesc)),
-			NumEnums:      2,
+			NumEnums:      3,
 			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
