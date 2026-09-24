@@ -61,6 +61,11 @@ services:
     image: ghcr.io/${GHCR_OWNER:-glistand}/helpdesk-conversation-service:${IMAGE_TAG:-latest}
     build: !reset null
 
+  project-service:
+    <<: *pull
+    image: ghcr.io/${GHCR_OWNER:-glistand}/helpdesk-project-service:${IMAGE_TAG:-latest}
+    build: !reset null
+
   api-gateway:
     <<: *pull
     image: ghcr.io/${GHCR_OWNER:-glistand}/helpdesk-api-gateway:${IMAGE_TAG:-latest}
