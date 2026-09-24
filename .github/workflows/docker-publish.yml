@@ -62,7 +62,7 @@ jobs:
             file: services/api-gateway/Dockerfile
           - name: web
             context: apps/web
-            file: Dockerfile
+            file: apps/web/Dockerfile
 
     steps:
       - name: Checkout
