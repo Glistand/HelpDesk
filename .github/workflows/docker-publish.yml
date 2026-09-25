@@ -54,9 +54,6 @@ jobs:
           - name: conversation-service
             context: .
             file: services/conversation-service/Dockerfile
-          - name: project-service
-            context: .
-            file: services/project-service/Dockerfile
           - name: api-gateway
             context: .
             file: services/api-gateway/Dockerfile

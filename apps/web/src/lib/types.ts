@@ -79,20 +79,6 @@ export interface TicketSummary {
   conversationId?: string;
 }
 
-export interface ProjectProfile {
-  name: string;
-  description: string;
-  domain: string;
-  websiteUrl: string;
-  supportEmail: string;
-  supportPhone: string;
-  timezone: string;
-  siteKey: string;
-  botInstructions: string;
-  autoCreateTicket: boolean;
-  updatedAt: string;
-}
-
 export interface AuthUser {
   id: string;
   email: string;

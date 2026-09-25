@@ -65,7 +65,7 @@ func main() {
 
 	repo := repository.New(sqlDB)
 	pub := natsx.NewPublisher(js)
-	srvImpl := grpcserver.New(repo, bot, pub, logger)
+	srvImpl := grpcserver.New(repo, bot, cfg.ProjectInstructions, pub, logger)
 
 	lis, err := net.Listen("tcp", cfg.GRPCAddr)
 	if err != nil {

@@ -23,9 +23,7 @@ CREATE TABLE IF NOT EXISTS rr_state (
 );
 
 INSERT INTO agents (id, name, role) VALUES
-    ('a-1', 'Алексей К.', 'L1 Support'),
-    ('a-2', 'Марина С.', 'L1 Support'),
-    ('a-3', 'Денис В.', 'L2 Escalation')
+    ('a-1', 'Алексей К.', 'L1 Support')
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO rr_state (queue, idx) VALUES ('l1', 0)

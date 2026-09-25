@@ -38,7 +38,6 @@ func main() {
 		cfg.SLAGRPCAddr,
 		cfg.SearchGRPCAddr,
 		cfg.ConversationGRPCAddr,
-		cfg.ProjectGRPCAddr,
 	)
 	if err != nil {
 		logger.Error("dial grpc failed", "error", err)
@@ -58,8 +57,6 @@ func main() {
 	mux.HandleFunc("POST /widget/conversations/{id}/handoff", api.WidgetHandoff)
 
 	auth := middleware.Auth(c.Auth)
-	mux.Handle("GET /project", auth(http.HandlerFunc(api.GetProject)))
-	mux.Handle("PATCH /project", auth(http.HandlerFunc(api.UpdateProject)))
 	mux.Handle("POST /tickets", auth(http.HandlerFunc(api.CreateTicket)))
 	mux.Handle("GET /tickets", auth(http.HandlerFunc(api.ListTickets)))
 	mux.Handle("GET /tickets/{id}", auth(http.HandlerFunc(api.GetTicket)))

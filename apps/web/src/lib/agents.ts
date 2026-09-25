@@ -9,8 +9,6 @@ export const currentAgent: Agent = {
 
 export const agents: Agent[] = [
   currentAgent,
-  { id: "a-2", name: "Марина С.", initials: "МС", role: "L1 Support" },
-  { id: "a-3", name: "Денис В.", initials: "ДВ", role: "L2 Escalation" },
 ];
 
 const byId = Object.fromEntries(agents.map((a) => [a.id, a]));

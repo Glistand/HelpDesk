@@ -45,6 +45,10 @@ const systemPrompt = `Ты — виртуальный помощник support d
 Не выдумывай факты о компании.`
 
 func (c *Client) Reply(ctx context.Context, history []ChatMessage) (string, error) {
+	return c.ReplyWithInstructions(ctx, history, "")
+}
+
+func (c *Client) ReplyWithInstructions(ctx context.Context, history []ChatMessage, instructions string) (string, error) {
 	if c.APIKey == "" {
 		return "", fmt.Errorf("OPENROUTER_API_KEY is not set")
 	}
@@ -53,8 +57,12 @@ func (c *Client) Reply(ctx context.Context, history []ChatMessage) (string, erro
 	if model == "" {
 		model = "inclusionai/ling-3.0-flash-vl:free"
 	}
+	prompt := systemPrompt
+	if strings.TrimSpace(instructions) != "" {
+		prompt += "\n\nКонтекст проекта:\n" + strings.TrimSpace(instructions)
+	}
 	msgs := make([]ChatMessage, 0, len(history)+1)
-	msgs = append(msgs, ChatMessage{Role: "system", Content: systemPrompt})
+	msgs = append(msgs, ChatMessage{Role: "system", Content: prompt})
 	msgs = append(msgs, history...)
 
 	body, _ := json.Marshal(chatRequest{Model: model, Messages: msgs})
@@ -79,7 +87,7 @@ func (c *Client) Reply(ctx context.Context, history []ChatMessage) (string, erro
 	raw, _ := io.ReadAll(res.Body)
 	if res.StatusCode == http.StatusTooManyRequests || res.StatusCode >= 500 {
 		// one fallback free model
-		return c.replyWithModel(ctx, history, "openrouter/free")
+		return c.replyWithModel(ctx, history, "openrouter/free", prompt)
 	}
 	if res.StatusCode >= 300 {
 		return "", fmt.Errorf("openrouter %d: %s", res.StatusCode, string(raw))
@@ -97,12 +105,12 @@ func (c *Client) Reply(ctx context.Context, history []ChatMessage) (string, erro
 	return strings.TrimSpace(parsed.Choices[0].Message.Content), nil
 }
 
-func (c *Client) replyWithModel(ctx context.Context, history []ChatMessage, model string) (string, error) {
+func (c *Client) replyWithModel(ctx context.Context, history []ChatMessage, model, prompt string) (string, error) {
 	orig := c.Model
 	c.Model = model
 	defer func() { c.Model = orig }()
 	base := strings.TrimRight(c.BaseURL, "/")
-	msgs := append([]ChatMessage{{Role: "system", Content: systemPrompt}}, history...)
+	msgs := append([]ChatMessage{{Role: "system", Content: prompt}}, history...)
 	body, _ := json.Marshal(chatRequest{Model: model, Messages: msgs})
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, base+"/chat/completions", bytes.NewReader(body))
 	if err != nil {

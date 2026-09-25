@@ -71,7 +71,6 @@ build-services: build-libs
 	go build -o bin/escalation-service ./services/escalation-service/cmd/escalation-service
 	go build -o bin/search-service ./services/search-service/cmd/search-service
 	go build -o bin/conversation-service ./services/conversation-service/cmd/conversation-service
-	go build -o bin/project-service ./services/project-service/cmd/project-service
 	go build -o bin/api-gateway ./services/api-gateway/cmd/api-gateway
 
 test-go:
@@ -86,7 +85,6 @@ test-go:
 		github.com/Glistand/HelpDesk/services/sla-service/... \
 		github.com/Glistand/HelpDesk/services/escalation-service/... \
 		github.com/Glistand/HelpDesk/services/search-service/... \
-		github.com/Glistand/HelpDesk/services/project-service/... \
 		github.com/Glistand/HelpDesk/services/api-gateway/...
 
 e2e-phase2:

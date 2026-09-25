@@ -17,17 +17,18 @@ import (
 
 type Server struct {
 	conversationv1.UnimplementedConversationServiceServer
-	repo   *repository.Repo
-	bot    *openrouter.Client
-	pub    *natsx.Publisher
-	logger *slog.Logger
+	repo                *repository.Repo
+	bot                 *openrouter.Client
+	projectInstructions string
+	pub                 *natsx.Publisher
+	logger              *slog.Logger
 }
 
-func New(repo *repository.Repo, bot *openrouter.Client, pub *natsx.Publisher, logger *slog.Logger) *Server {
+func New(repo *repository.Repo, bot *openrouter.Client, projectInstructions string, pub *natsx.Publisher, logger *slog.Logger) *Server {
 	if logger == nil {
 		logger = slog.Default()
 	}
-	return &Server{repo: repo, bot: bot, pub: pub, logger: logger}
+	return &Server{repo: repo, bot: bot, projectInstructions: projectInstructions, pub: pub, logger: logger}
 }
 
 func (s *Server) CreateConversation(ctx context.Context, req *conversationv1.CreateConversationRequest) (*conversationv1.CreateConversationResponse, error) {
@@ -174,7 +175,7 @@ func (s *Server) generateBotReply(ctx context.Context, conversationID string) st
 	}
 	botCtx, cancel := context.WithTimeout(ctx, 40*time.Second)
 	defer cancel()
-	reply, err := s.bot.Reply(botCtx, msgs)
+	reply, err := s.bot.ReplyWithInstructions(botCtx, msgs, s.projectInstructions)
 	if err != nil {
 		s.logger.Warn("openrouter failed", "error", err)
 		return fallback

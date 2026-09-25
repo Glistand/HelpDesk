@@ -12,7 +12,6 @@ use (
 	./services/conversation-service
 	./services/escalation-service
 	./services/notification-service
-	./services/project-service
 	./services/search-service
 	./services/sla-service
 	./services/ticket-service

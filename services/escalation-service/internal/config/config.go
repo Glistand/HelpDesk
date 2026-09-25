@@ -16,7 +16,7 @@ func Load() Config {
 		DatabaseURL:    getenv("ESCALATION_DATABASE_URL", "postgres://helpdesk:helpdesk@localhost:5432/escalation?sslmode=disable"),
 		NATSURL:        getenv("NATS_URL", "nats://localhost:4222"),
 		TicketGRPCAddr: getenv("TICKET_GRPC_ADDR", "localhost:50052"),
-		L2AssigneeID:   getenv("ESCALATION_L2_ASSIGNEE", "a-3"),
+		L2AssigneeID:   getenv("ESCALATION_L2_ASSIGNEE", "a-1"),
 	}
 }
 

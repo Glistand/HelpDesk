@@ -11,7 +11,6 @@ type Config struct {
 	SLAGRPCAddr          string
 	SearchGRPCAddr       string
 	ConversationGRPCAddr string
-	ProjectGRPCAddr      string
 	WidgetSiteKey        string
 }
 
@@ -25,7 +24,6 @@ func Load() Config {
 		SLAGRPCAddr:          getenv("SLA_GRPC_ADDR", "localhost:50055"),
 		SearchGRPCAddr:       getenv("SEARCH_GRPC_ADDR", "localhost:50057"),
 		ConversationGRPCAddr: getenv("CONVERSATION_GRPC_ADDR", "localhost:50058"),
-		ProjectGRPCAddr:      getenv("PROJECT_GRPC_ADDR", "localhost:50059"),
 		WidgetSiteKey:        getenv("WIDGET_SITE_KEY", "demo-site"),
 	}
 }
