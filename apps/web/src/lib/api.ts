@@ -108,9 +108,41 @@ export async function getMe(): Promise<AuthUser> {
   }
 }
 
+/** Seed accounts — used when GET /users is unavailable (old gateway). */
+export const SEED_USERS: AuthUser[] = [
+  {
+    id: "a-1",
+    email: "agent@helpdesk.local",
+    name: "Алексей К.",
+    role: "agent",
+  },
+  {
+    id: "a-admin",
+    email: "admin@helpdesk.local",
+    name: "Admin",
+    role: "admin",
+  },
+];
+
 export async function listUsers(): Promise<AuthUser[]> {
-  const data = await apiFetch<{ users: AuthUser[] }>("/users");
-  return data.users || [];
+  try {
+    const data = await apiFetch<{ users: AuthUser[] }>("/users");
+    const users = data.users || [];
+    if (users.length > 0) return users;
+  } catch {
+    /* fall through */
+  }
+  return SEED_USERS;
+}
+
+export async function assignTicket(
+  id: string,
+  assigneeId: string,
+): Promise<void> {
+  await apiFetch(`/tickets/${id}/assign`, {
+    method: "POST",
+    body: JSON.stringify({ assignee_id: assigneeId }),
+  });
 }
 
 export async function listTickets(opts?: {

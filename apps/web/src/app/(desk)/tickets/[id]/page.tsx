@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AssignActions } from "@/components/assign-actions";
 import { PriorityLabel, SlaBadge, StatusBadge } from "@/components/badges";
 import { StatusActions } from "@/components/status-actions";
 import { Timeline } from "@/components/timeline";
-import { ApiError, getTicketCard } from "@/lib/api";
+import { ApiError, getTicketCard, listUsers } from "@/lib/api";
 import { formatDateTime, formatRelative } from "@/lib/format";
+import type { AuthUser } from "@/lib/types";
 
 export default async function TicketPage({
   params,
@@ -19,6 +21,8 @@ export default async function TicketPage({
     if (e instanceof ApiError && e.status === 404) notFound();
     throw e;
   }
+
+  const users = await listUsers().catch((): AuthUser[] => []);
 
   return (
     <>
@@ -47,6 +51,11 @@ export default async function TicketPage({
             </p>
           </div>
           <div className="flex gap-2">
+            <AssignActions
+              ticketId={ticket.id}
+              currentAssigneeId={ticket.assignee?.id}
+              users={users}
+            />
             <StatusActions ticketId={ticket.id} current={ticket.status} />
           </div>
         </div>
@@ -77,6 +86,11 @@ export default async function TicketPage({
             <span className="text-[13px] text-secondary">
               {ticket.assignee?.name ?? "Не назначен"}
             </span>
+            {ticket.assignee?.id && (
+              <p className="mt-1 font-mono text-[11px] text-tertiary">
+                {ticket.assignee.id}
+              </p>
+            )}
           </Meta>
           <Meta label="Первый ответ">
             <span className="font-mono text-[12px] text-secondary">
