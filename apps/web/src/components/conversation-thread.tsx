@@ -151,7 +151,7 @@ export function ConversationThread({
               type="button"
               disabled={pending || !body.trim() || conversation.status === "resolved"}
               onClick={send}
-              className="rounded-md bg-accent px-4 py-2 text-[13px] font-ui-medium text-white disabled:opacity-50"
+              className="btn-accent px-4 py-2 text-[13px] disabled:opacity-50"
             >
               Отправить
             </button>

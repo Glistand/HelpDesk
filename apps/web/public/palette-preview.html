@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HelpDesk — палитры A / B / C</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, "Segoe UI", system-ui, sans-serif;
+      background: #1a1a1a;
+      color: #eee;
+      padding: 24px;
+    }
+    h1 { font-size: 18px; font-weight: 600; margin: 0 0 8px; }
+    .hint { color: #999; font-size: 13px; margin-bottom: 20px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #333;
+    }
+    .card h2 {
+      margin: 0;
+      padding: 12px 16px;
+      font-size: 14px;
+      background: #111;
+      border-bottom: 1px solid #333;
+    }
+    .card h2 small { color: #888; font-weight: 400; }
+    .desk {
+      display: grid;
+      grid-template-columns: 52px 180px 1fr;
+      height: 300px;
+      font-size: 12px;
+    }
+    .rail {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 0;
+      border-right: 1px solid var(--border);
+    }
+    .rail .logo {
+      width: 28px; height: 28px; border-radius: 999px;
+      background: var(--accent); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 12px;
+    }
+    .rail .ico {
+      width: 32px; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .rail .ico.on { background: var(--accent-muted); color: var(--accent); }
+    .list {
+      border-right: 1px solid var(--border);
+      padding: 12px;
+      overflow: hidden;
+    }
+    .list h3 { margin: 0 0 10px; font-size: 13px; color: var(--text); }
+    .chip {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 999px;
+      margin: 0 4px 8px 0;
+      font-size: 10px;
+      background: var(--elev);
+      color: var(--muted);
+    }
+    .chip.on { background: var(--accent-muted); color: var(--accent); font-weight: 600; }
+    .row {
+      padding: 8px;
+      border-radius: 10px;
+      margin-bottom: 4px;
+    }
+    .row.on { background: var(--elev); }
+    .row .t { color: var(--text); font-weight: 600; margin-bottom: 2px; }
+    .row .p { color: var(--muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .thread { padding: 12px 14px; display: flex; flex-direction: column; }
+    .thread .hd { color: var(--muted); font-size: 11px; margin-bottom: 12px; }
+    .thread .hd strong { color: var(--text); font-size: 14px; display: block; margin-bottom: 2px; }
+    .bub {
+      max-width: 85%;
+      padding: 8px 10px;
+      border-radius: 12px;
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+    .bub.v { background: var(--elev); color: var(--text); align-self: flex-start; }
+    .bub.a { background: var(--accent); color: #fff; align-self: flex-end; }
+    .composer {
+      margin-top: auto;
+      display: flex;
+      gap: 8px;
+      padding-top: 10px;
+    }
+    .composer input {
+      flex: 1;
+      border: 1px solid var(--border);
+      background: var(--base);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 12px;
+    }
+    .composer button {
+      border: 0;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .swatches {
+      display: flex;
+      gap: 6px;
+      padding: 10px 16px;
+      background: #0a0a0a;
+      border-top: 1px solid #333;
+    }
+    .swatches span {
+      flex: 1;
+      height: 22px;
+      border-radius: 4px;
+      border: 1px solid rgba(255,255,255,.1);
+    }
+    .sec {
+      display: inline-block;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--secondary);
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+
+    /* A */
+    .a-dark {
+      --base: #0b1220; --panel: #111a2b; --elev: #182338;
+      --text: #e8eef6; --muted: #8b9bb4; --accent: #0d9488;
+      --accent-muted: rgba(13,148,136,.18); --secondary: #0d9488;
+      --border: rgba(148,163,184,.18);
+    }
+    .a-light {
+      --base: #f4f7fb; --panel: #fff; --elev: #e8eef6;
+      --text: #0f172a; --muted: #64748b; --accent: #0f766e;
+      --accent-muted: rgba(15,118,110,.12); --secondary: #0f766e;
+      --border: #d5deea;
+    }
+
+    /* B */
+    .b-dark {
+      --base: #12100e; --panel: #1a1714; --elev: #24201c;
+      --text: #f3eee6; --muted: #a89f94; --accent: #d97706;
+      --accent-muted: rgba(217,119,6,.18); --secondary: #d97706;
+      --border: rgba(231,220,200,.12);
+    }
+    .b-light {
+      --base: #f7f4ef; --panel: #fffdf9; --elev: #efe9e0;
+      --text: #1c1917; --muted: #78716c; --accent: #b45309;
+      --accent-muted: rgba(180,83,9,.12); --secondary: #b45309;
+      --border: #e7e0d6;
+    }
+
+    /* C — SalonPro */
+    .c-light {
+      --base: #f4f4f4; --panel: #ffffff; --elev: #f9f9f9;
+      --text: #171717; --muted: #8b8b8b; --accent: #fb4b75;
+      --accent-muted: rgba(251,75,117,.12); --secondary: #16a897;
+      --border: #ececec;
+    }
+    .c-dark {
+      --base: #0d0d0d; --panel: #171717; --elev: #232323;
+      --text: #f4f4f4; --muted: #8b8b8b; --accent: #fb4b75;
+      --accent-muted: rgba(251,75,117,.2); --secondary: #16a897;
+      --border: rgba(255,255,255,.08);
+    }
+
+    .desk { background: var(--base); }
+    .rail, .list, .thread { background: var(--panel); }
+  </style>
+</head>
+<body>
+  <h1>HelpDesk — выбор палитры</h1>
+  <p class="hint">A / B / <b>C (SalonPro)</b> — primary <code>#fb4b75</code>, secondary <code>#16a897</code>, light-first как на salonpro.online. Напиши в чат <b>A</b>, <b>B</b> или <b>C</b>.</p>
+
+  <div class="grid">
+    <div class="card a-dark">
+      <h2>A — Slate Teal <small>dark</small></h2>
+      <div class="desk" id="desk-a"></div>
+      <div class="swatches">
+        <span style="background:#0b1220"></span>
+        <span style="background:#111a2b"></span>
+        <span style="background:#0d9488"></span>
+        <span style="background:#e8eef6"></span>
+      </div>
+    </div>
+
+    <div class="card b-dark">
+      <h2>B — Ink Amber <small>dark</small></h2>
+      <div class="desk" id="desk-b"></div>
+      <div class="swatches">
+        <span style="background:#12100e"></span>
+        <span style="background:#1a1714"></span>
+        <span style="background:#d97706"></span>
+        <span style="background:#f3eee6"></span>
+      </div>
+    </div>
+
+    <div class="card c-light">
+      <h2>C — SalonPro <small>light (как сайт)</small></h2>
+      <div class="desk" id="desk-c"></div>
+      <div class="swatches">
+        <span style="background:#ffffff"></span>
+        <span style="background:#f4f4f4"></span>
+        <span style="background:#fb4b75"></span>
+        <span style="background:#16a897"></span>
+        <span style="background:#171717"></span>
+      </div>
+    </div>
+
+    <div class="card c-dark">
+      <h2>C — SalonPro <small>dark adaptation</small></h2>
+      <div class="desk" id="desk-cd"></div>
+      <div class="swatches">
+        <span style="background:#0d0d0d"></span>
+        <span style="background:#171717"></span>
+        <span style="background:#fb4b75"></span>
+        <span style="background:#16a897"></span>
+        <span style="background:#f4f4f4"></span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const tpl = `
+      <div class="rail">
+        <div class="logo">S</div>
+        <div class="ico on">☰</div>
+        <div class="ico">🎫</div>
+        <div class="ico">👥</div>
+      </div>
+      <div class="list">
+        <h3>Беседы</h3>
+        <span class="chip on">Активные</span>
+        <span class="chip">Handoff</span>
+        <div class="row on">
+          <div class="t">Ждёт агента <span class="sec" title="secondary"></span></div>
+          <div class="p">Нужна помощь с оплатой…</div>
+        </div>
+        <div class="row">
+          <div class="t">Открыт · Алексей</div>
+          <div class="p">Спасибо, подожду</div>
+        </div>
+      </div>
+      <div class="thread">
+        <div class="hd">
+          <strong>Чат с виджета</strong>
+          агент: очередь · visitor a1b2…
+        </div>
+        <div class="bub v">Здравствуйте, не проходит оплата</div>
+        <div class="bub a">Сейчас посмотрю</div>
+        <div class="composer">
+          <input readonly value="Напишите ответ…" />
+          <button>Отправить</button>
+        </div>
+      </div>`;
+    for (const id of ["desk-a", "desk-b", "desk-c", "desk-cd"]) {
+      document.getElementById(id).innerHTML = tpl;
+    }
+  </script>
+</body>
+</html>

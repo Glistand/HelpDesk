@@ -109,7 +109,7 @@ export function IconRail({ user }: { user: AuthUser | null }) {
       <div className={`mb-4 flex items-center ${expanded ? "px-3 gap-2" : "justify-center"}`}>
         <Link
           href="/inbox"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-accent font-ui-semibold text-sm text-white"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent font-ui-semibold text-sm text-white"
           title="Support Desk"
         >
           S

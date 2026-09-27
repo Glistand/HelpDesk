@@ -13,6 +13,7 @@ import type {
 } from "./types";
 
 export const AUTH_COOKIE = "hd_token";
+export const USER_COOKIE = "hd_user";
 
 export function gatewayURL(): string {
   return (
@@ -25,6 +26,17 @@ export function gatewayURL(): string {
 async function token(): Promise<string | undefined> {
   const jar = await cookies();
   return jar.get(AUTH_COOKIE)?.value;
+}
+
+function parseUserCookie(raw: string | undefined): AuthUser | null {
+  if (!raw) return null;
+  try {
+    const u = JSON.parse(raw) as AuthUser;
+    if (u?.id && u?.email) return u;
+  } catch {
+    /* ignore */
+  }
+  return null;
 }
 
 export class ApiError extends Error {
@@ -84,8 +96,16 @@ export async function login(
 }
 
 export async function getMe(): Promise<AuthUser> {
-  const data = await apiFetch<{ user: AuthUser }>("/auth/me");
-  return data.user;
+  try {
+    const data = await apiFetch<{ user: AuthUser }>("/auth/me");
+    return data.user;
+  } catch {
+    // Fallback when gateway is old (no /auth/me) but login cookie exists.
+    const jar = await cookies();
+    const fromCookie = parseUserCookie(jar.get(USER_COOKIE)?.value);
+    if (fromCookie && jar.get(AUTH_COOKIE)?.value) return fromCookie;
+    throw new ApiError(401, "unauthorized");
+  }
 }
 
 export async function listUsers(): Promise<AuthUser[]> {

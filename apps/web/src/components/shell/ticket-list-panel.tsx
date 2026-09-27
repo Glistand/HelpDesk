@@ -123,9 +123,9 @@ export function TicketListPanel({ initialTickets, userId }: Props) {
               <Link
                 key={f.label}
                 href={href}
-                className={`rounded-md px-2 py-1 text-xs transition-colors ${
+                className={`rounded-full px-2.5 py-1 text-xs transition-colors ${
                   active
-                    ? "bg-elevated text-primary ring-surface"
+                    ? "bg-accent-muted text-accent ring-surface"
                     : "text-tertiary hover:text-secondary"
                 }`}
               >

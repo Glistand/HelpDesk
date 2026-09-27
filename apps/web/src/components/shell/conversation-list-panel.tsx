@@ -95,9 +95,9 @@ export function ConversationListPanel({ initialConversations, users }: Props) {
               <Link
                 key={f.label}
                 href={href}
-                className={`rounded-md px-2 py-1 text-[11px] font-ui-medium transition-colors ${
+                className={`rounded-full px-2.5 py-1 text-[11px] font-ui-medium transition-colors ${
                   active
-                    ? "bg-elevated text-primary"
+                    ? "bg-accent-muted text-accent"
                     : "text-tertiary hover:bg-elevated/70 hover:text-secondary"
                 }`}
               >

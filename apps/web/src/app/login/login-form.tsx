@@ -39,7 +39,7 @@ export default function LoginForm() {
     <div className="flex min-h-screen items-center justify-center bg-base px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-accent font-ui-semibold text-white">
+          <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-accent font-ui-semibold text-white">
             S
           </div>
           <h1 className="font-ui-semibold text-xl text-primary">Support Desk</h1>
@@ -49,7 +49,7 @@ export default function LoginForm() {
         </div>
         <form
           onSubmit={onSubmit}
-          className="space-y-3 rounded-lg border border-border bg-view p-5"
+          className="space-y-4 rounded-2xl border border-border bg-view p-6 shadow-elevated"
         >
           <label className="block space-y-1.5">
             <span className="text-[13px] font-ui-medium text-secondary">Email</span>
@@ -77,7 +77,7 @@ export default function LoginForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-md bg-accent px-4 py-2 text-[13px] font-ui-medium text-white hover:opacity-90 disabled:opacity-60"
+            className="btn-accent w-full px-4 py-2.5 text-[14px] disabled:opacity-60"
           >
             {loading ? "Вход…" : "Войти"}
           </button>

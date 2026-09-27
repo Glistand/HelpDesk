@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { AUTH_COOKIE, login } from "@/lib/api";
+import { AUTH_COOKIE, USER_COOKIE, login } from "@/lib/api";
 
 export async function POST(req: Request) {
   let body: { email?: string; password?: string };
@@ -14,11 +14,18 @@ export async function POST(req: Request) {
   try {
     const result = await login(body.email, body.password);
     const res = NextResponse.json({ user: result.user });
-    res.cookies.set(AUTH_COOKIE, result.access_token, {
-      httpOnly: true,
-      sameSite: "lax",
+    const cookieOpts = {
+      sameSite: "lax" as const,
       path: "/",
       maxAge: 60 * 60 * 12,
+    };
+    res.cookies.set(AUTH_COOKIE, result.access_token, {
+      ...cookieOpts,
+      httpOnly: true,
+    });
+    res.cookies.set(USER_COOKIE, JSON.stringify(result.user), {
+      ...cookieOpts,
+      httpOnly: true,
     });
     return res;
   } catch {

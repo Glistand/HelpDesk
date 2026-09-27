@@ -26,11 +26,17 @@ function value(name: string): string | undefined {
 
 export function branding() {
   const defaultTheme: Theme =
-    process.env.WEB_DEFAULT_THEME === "light" ? "light" : "dark";
+    process.env.WEB_DEFAULT_THEME === "dark" ? "dark" : "light";
   const name = process.env.WEB_BRAND_NAME?.trim() || "Support Desk";
   const style: CSSProperties & Record<`--${string}`, string> = {};
 
+  // SalonPro defaults unless env overrides
+  style["--web-accent"] = value("WEB_ACCENT_COLOR") || "#fb4b75";
+  style["--web-accent-muted"] =
+    value("WEB_ACCENT_MUTED_COLOR") || "rgba(251, 75, 117, 0.12)";
+
   for (const [env, variable] of Object.entries(colorVariables)) {
+    if (env === "WEB_ACCENT_COLOR" || env === "WEB_ACCENT_MUTED_COLOR") continue;
     const color = value(env);
     if (color) style[variable] = color;
   }
