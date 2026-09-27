@@ -2,7 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
-import type { ChatMessage, ConversationSummary } from "@/lib/types";
+import type { AuthUser, ChatMessage, ConversationSummary } from "@/lib/types";
+import { nameByUserId } from "@/lib/agents";
 import { formatDateTime, formatRelative } from "@/lib/format";
 
 const ROLE_LABEL: Record<string, string> = {
@@ -15,9 +16,11 @@ const ROLE_LABEL: Record<string, string> = {
 export function ConversationThread({
   conversation,
   messages,
+  users = [],
 }: {
   conversation: ConversationSummary;
   messages: ChatMessage[];
+  users?: AuthUser[];
 }) {
   const router = useRouter();
   const [body, setBody] = useState("");
@@ -78,6 +81,11 @@ export function ConversationThread({
             </h1>
             <p className="text-[13px] text-tertiary">
               {conversation.status} · visitor {conversation.visitorId.slice(0, 8)}…
+              {" · "}
+              агент:{" "}
+              {conversation.assigneeId
+                ? nameByUserId(conversation.assigneeId, users)
+                : "очередь"}
               {" · "}
               {formatRelative(conversation.updatedAt)}
             </p>

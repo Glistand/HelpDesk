@@ -83,6 +83,16 @@ export async function login(
   };
 }
 
+export async function getMe(): Promise<AuthUser> {
+  const data = await apiFetch<{ user: AuthUser }>("/auth/me");
+  return data.user;
+}
+
+export async function listUsers(): Promise<AuthUser[]> {
+  const data = await apiFetch<{ users: AuthUser[] }>("/users");
+  return data.users || [];
+}
+
 export async function listTickets(opts?: {
   assigneeId?: string;
 }): Promise<TicketSummary[]> {

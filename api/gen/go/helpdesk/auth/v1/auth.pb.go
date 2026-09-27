@@ -437,6 +437,86 @@ func (x *GetUserResponse) GetUser() *User {
 	return nil
 }
 
+type ListUsersRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListUsersRequest) Reset() {
+	*x = ListUsersRequest{}
+	mi := &file_helpdesk_auth_v1_auth_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListUsersRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListUsersRequest) ProtoMessage() {}
+
+func (x *ListUsersRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_helpdesk_auth_v1_auth_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListUsersRequest.ProtoReflect.Descriptor instead.
+func (*ListUsersRequest) Descriptor() ([]byte, []int) {
+	return file_helpdesk_auth_v1_auth_proto_rawDescGZIP(), []int{7}
+}
+
+type ListUsersResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Users         []*User                `protobuf:"bytes,1,rep,name=users,proto3" json:"users,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListUsersResponse) Reset() {
+	*x = ListUsersResponse{}
+	mi := &file_helpdesk_auth_v1_auth_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListUsersResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListUsersResponse) ProtoMessage() {}
+
+func (x *ListUsersResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_helpdesk_auth_v1_auth_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListUsersResponse.ProtoReflect.Descriptor instead.
+func (*ListUsersResponse) Descriptor() ([]byte, []int) {
+	return file_helpdesk_auth_v1_auth_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *ListUsersResponse) GetUsers() []*User {
+	if x != nil {
+		return x.Users
+	}
+	return nil
+}
+
 var File_helpdesk_auth_v1_auth_proto protoreflect.FileDescriptor
 
 const file_helpdesk_auth_v1_auth_proto_rawDesc = "" +
@@ -462,18 +542,22 @@ const file_helpdesk_auth_v1_auth_proto_rawDesc = "" +
 	"\x0eGetUserRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"=\n" +
 	"\x0fGetUserResponse\x12*\n" +
-	"\x04user\x18\x01 \x01(\v2\x16.helpdesk.auth.v1.UserR\x04user*P\n" +
+	"\x04user\x18\x01 \x01(\v2\x16.helpdesk.auth.v1.UserR\x04user\"\x12\n" +
+	"\x10ListUsersRequest\"A\n" +
+	"\x11ListUsersResponse\x12,\n" +
+	"\x05users\x18\x01 \x03(\v2\x16.helpdesk.auth.v1.UserR\x05users*P\n" +
 	"\x04Role\x12\x14\n" +
 	"\x10ROLE_UNSPECIFIED\x10\x00\x12\x0e\n" +
 	"\n" +
 	"ROLE_AGENT\x10\x01\x12\x0e\n" +
 	"\n" +
 	"ROLE_ADMIN\x10\x02\x12\x12\n" +
-	"\x0eROLE_REQUESTER\x10\x032\x89\x02\n" +
+	"\x0eROLE_REQUESTER\x10\x032\xdf\x02\n" +
 	"\vAuthService\x12H\n" +
 	"\x05Login\x12\x1e.helpdesk.auth.v1.LoginRequest\x1a\x1f.helpdesk.auth.v1.LoginResponse\x12`\n" +
 	"\rValidateToken\x12&.helpdesk.auth.v1.ValidateTokenRequest\x1a'.helpdesk.auth.v1.ValidateTokenResponse\x12N\n" +
-	"\aGetUser\x12 .helpdesk.auth.v1.GetUserRequest\x1a!.helpdesk.auth.v1.GetUserResponseBAZ?github.com/Glistand/HelpDesk/api/gen/go/helpdesk/auth/v1;authv1b\x06proto3"
+	"\aGetUser\x12 .helpdesk.auth.v1.GetUserRequest\x1a!.helpdesk.auth.v1.GetUserResponse\x12T\n" +
+	"\tListUsers\x12\".helpdesk.auth.v1.ListUsersRequest\x1a#.helpdesk.auth.v1.ListUsersResponseBAZ?github.com/Glistand/HelpDesk/api/gen/go/helpdesk/auth/v1;authv1b\x06proto3"
 
 var (
 	file_helpdesk_auth_v1_auth_proto_rawDescOnce sync.Once
@@ -488,7 +572,7 @@ func file_helpdesk_auth_v1_auth_proto_rawDescGZIP() []byte {
 }
 
 var file_helpdesk_auth_v1_auth_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_helpdesk_auth_v1_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_helpdesk_auth_v1_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_helpdesk_auth_v1_auth_proto_goTypes = []any{
 	(Role)(0),                     // 0: helpdesk.auth.v1.Role
 	(*User)(nil),                  // 1: helpdesk.auth.v1.User
@@ -498,23 +582,28 @@ var file_helpdesk_auth_v1_auth_proto_goTypes = []any{
 	(*ValidateTokenResponse)(nil), // 5: helpdesk.auth.v1.ValidateTokenResponse
 	(*GetUserRequest)(nil),        // 6: helpdesk.auth.v1.GetUserRequest
 	(*GetUserResponse)(nil),       // 7: helpdesk.auth.v1.GetUserResponse
+	(*ListUsersRequest)(nil),      // 8: helpdesk.auth.v1.ListUsersRequest
+	(*ListUsersResponse)(nil),     // 9: helpdesk.auth.v1.ListUsersResponse
 }
 var file_helpdesk_auth_v1_auth_proto_depIdxs = []int32{
 	0, // 0: helpdesk.auth.v1.User.role:type_name -> helpdesk.auth.v1.Role
 	1, // 1: helpdesk.auth.v1.LoginResponse.user:type_name -> helpdesk.auth.v1.User
 	1, // 2: helpdesk.auth.v1.ValidateTokenResponse.user:type_name -> helpdesk.auth.v1.User
 	1, // 3: helpdesk.auth.v1.GetUserResponse.user:type_name -> helpdesk.auth.v1.User
-	2, // 4: helpdesk.auth.v1.AuthService.Login:input_type -> helpdesk.auth.v1.LoginRequest
-	4, // 5: helpdesk.auth.v1.AuthService.ValidateToken:input_type -> helpdesk.auth.v1.ValidateTokenRequest
-	6, // 6: helpdesk.auth.v1.AuthService.GetUser:input_type -> helpdesk.auth.v1.GetUserRequest
-	3, // 7: helpdesk.auth.v1.AuthService.Login:output_type -> helpdesk.auth.v1.LoginResponse
-	5, // 8: helpdesk.auth.v1.AuthService.ValidateToken:output_type -> helpdesk.auth.v1.ValidateTokenResponse
-	7, // 9: helpdesk.auth.v1.AuthService.GetUser:output_type -> helpdesk.auth.v1.GetUserResponse
-	7, // [7:10] is the sub-list for method output_type
-	4, // [4:7] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	1, // 4: helpdesk.auth.v1.ListUsersResponse.users:type_name -> helpdesk.auth.v1.User
+	2, // 5: helpdesk.auth.v1.AuthService.Login:input_type -> helpdesk.auth.v1.LoginRequest
+	4, // 6: helpdesk.auth.v1.AuthService.ValidateToken:input_type -> helpdesk.auth.v1.ValidateTokenRequest
+	6, // 7: helpdesk.auth.v1.AuthService.GetUser:input_type -> helpdesk.auth.v1.GetUserRequest
+	8, // 8: helpdesk.auth.v1.AuthService.ListUsers:input_type -> helpdesk.auth.v1.ListUsersRequest
+	3, // 9: helpdesk.auth.v1.AuthService.Login:output_type -> helpdesk.auth.v1.LoginResponse
+	5, // 10: helpdesk.auth.v1.AuthService.ValidateToken:output_type -> helpdesk.auth.v1.ValidateTokenResponse
+	7, // 11: helpdesk.auth.v1.AuthService.GetUser:output_type -> helpdesk.auth.v1.GetUserResponse
+	9, // 12: helpdesk.auth.v1.AuthService.ListUsers:output_type -> helpdesk.auth.v1.ListUsersResponse
+	9, // [9:13] is the sub-list for method output_type
+	5, // [5:9] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_helpdesk_auth_v1_auth_proto_init() }
@@ -528,7 +617,7 @@ func file_helpdesk_auth_v1_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_helpdesk_auth_v1_auth_proto_rawDesc), len(file_helpdesk_auth_v1_auth_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   7,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -5,14 +5,14 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState, useTransition } from "react";
 import { PriorityDot, SlaDot } from "@/components/badges";
 import { formatRelative } from "@/lib/format";
-import { currentAgent } from "@/lib/agents";
 import type { TicketSummary } from "@/lib/types";
 
 type Props = {
   initialTickets: TicketSummary[];
+  userId: string;
 };
 
-export function TicketListPanel({ initialTickets }: Props) {
+export function TicketListPanel({ initialTickets, userId }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -77,20 +77,20 @@ export function TicketListPanel({ initialTickets }: Props) {
   const list = useMemo(() => {
     if (qParam.trim()) return tickets;
     if (filter === "mine") {
-      return tickets.filter((t) => t.assigneeId === currentAgent.id);
+      return tickets.filter((t) => t.assigneeId === userId);
     }
     if (filter === "breached") {
       return tickets.filter((t) => t.slaState === "breached");
     }
     return tickets.filter((t) => t.status !== "resolved" && t.status !== "closed");
-  }, [tickets, filter, qParam]);
+  }, [tickets, filter, qParam, userId]);
 
   const stats = useMemo(() => {
     const open = tickets.filter((t) => !["resolved", "closed"].includes(t.status)).length;
-    const mine = tickets.filter((t) => t.assigneeId === currentAgent.id).length;
+    const mine = tickets.filter((t) => t.assigneeId === userId).length;
     const breached = tickets.filter((t) => t.slaState === "breached").length;
     return { open, mine, breached };
-  }, [tickets]);
+  }, [tickets, userId]);
 
   const filters = [
     { key: null as string | null, label: "Все", count: stats.open },

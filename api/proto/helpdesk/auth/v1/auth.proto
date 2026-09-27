@@ -9,6 +9,7 @@ service AuthService {
   rpc Login(LoginRequest) returns (LoginResponse);
   rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
   rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
 }
 
 enum Role {
@@ -51,4 +52,10 @@ message GetUserRequest {
 
 message GetUserResponse {
   User user = 1;
+}
+
+message ListUsersRequest {}
+
+message ListUsersResponse {
+  repeated User users = 1;
 }

@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo } from "react";
+import { nameByUserId } from "@/lib/agents";
 import { formatRelative } from "@/lib/format";
-import type { ConversationStatus, ConversationSummary } from "@/lib/types";
+import type { AuthUser, ConversationStatus, ConversationSummary } from "@/lib/types";
 
 type Props = {
   initialConversations: ConversationSummary[];
+  users: AuthUser[];
 };
 
 const STATUS_LABEL: Record<ConversationStatus, string> = {
@@ -33,7 +35,7 @@ function statusTone(status: ConversationStatus): string {
   }
 }
 
-export function ConversationListPanel({ initialConversations }: Props) {
+export function ConversationListPanel({ initialConversations, users }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -141,8 +143,15 @@ export function ConversationListPanel({ initialConversations }: Props) {
                     <p className="mt-1.5 line-clamp-2 text-[13px] leading-snug text-secondary">
                       {c.preview || "Новая беседа"}
                     </p>
-                    <p className="mt-1 font-mono text-[10px] text-tertiary">
-                      {c.visitorId.slice(0, 8)}…
+                    <p className="mt-1 flex items-center justify-between gap-2 text-[11px] text-tertiary">
+                      <span className="truncate">
+                        {c.assigneeId
+                          ? nameByUserId(c.assigneeId, users)
+                          : "Очередь"}
+                      </span>
+                      <span className="shrink-0 font-mono">
+                        {c.visitorId.slice(0, 8)}…
+                      </span>
                     </p>
                   </Link>
                 </li>
