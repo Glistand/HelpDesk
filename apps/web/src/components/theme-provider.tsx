@@ -4,13 +4,13 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
-  useState,
+  useSyncExternalStore,
 } from "react";
 
 export type Theme = "dark" | "light";
 
 const STORAGE_KEY = "helpdesk-theme";
+const THEME_CHANGED_EVENT = "helpdesk-theme-change";
 
 type ThemeContextValue = {
   theme: Theme;
@@ -24,21 +24,31 @@ function applyTheme(theme: Theme) {
   document.documentElement.setAttribute("data-theme", theme);
 }
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("dark");
+function storedTheme(defaultTheme: Theme): Theme {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  return stored === "light" || stored === "dark" ? stored : defaultTheme;
+}
 
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    const initial =
-      stored === "light" || stored === "dark" ? stored : "dark";
-    setThemeState(initial);
-    applyTheme(initial);
-  }, []);
+export function ThemeProvider({
+  children,
+  defaultTheme,
+}: {
+  children: React.ReactNode;
+  defaultTheme: Theme;
+}) {
+  const theme = useSyncExternalStore(
+    (onStoreChange) => {
+      window.addEventListener(THEME_CHANGED_EVENT, onStoreChange);
+      return () => window.removeEventListener(THEME_CHANGED_EVENT, onStoreChange);
+    },
+    () => storedTheme(defaultTheme),
+    () => defaultTheme,
+  );
 
   const setTheme = useCallback((next: Theme) => {
-    setThemeState(next);
     applyTheme(next);
     localStorage.setItem(STORAGE_KEY, next);
+    window.dispatchEvent(new Event(THEME_CHANGED_EVENT));
   }, []);
 
   const toggleTheme = useCallback(() => {

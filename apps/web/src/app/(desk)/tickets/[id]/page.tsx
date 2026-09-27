@@ -24,10 +24,10 @@ export default async function TicketPage({
     <>
       <header className="shrink-0 border-b border-border px-5 py-4 md:px-6">
         <Link
-          href="/inbox"
+          href="/tickets"
           className="text-[13px] text-tertiary hover:text-accent md:hidden"
         >
-          ← Inbox
+          ← Тикеты
         </Link>
         <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0 space-y-2">

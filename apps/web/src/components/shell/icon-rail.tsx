@@ -8,8 +8,7 @@ const items = [
   {
     href: "/inbox",
     label: "Inbox",
-    match: (p: string) =>
-      p === "/inbox" || p.startsWith("/conversations/") || p.startsWith("/tickets/"),
+    match: (p: string) => p === "/inbox" || p.startsWith("/conversations/"),
     icon: (
       <path
         d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h10v2H4v-2z"
@@ -18,8 +17,20 @@ const items = [
     ),
   },
   {
+    href: "/tickets",
+    label: "Тикеты",
+    match: (p: string) =>
+      p === "/tickets" || (p.startsWith("/tickets/") && p !== "/tickets/new"),
+    icon: (
+      <path
+        d="M4 6h16v12H4V6zm2 3v2h12V9H6zm0 4v2h8v-2H6z"
+        fill="currentColor"
+      />
+    ),
+  },
+  {
     href: "/tickets/new",
-    label: "Тикет",
+    label: "Создать тикет",
     match: (p: string) => p === "/tickets/new",
     icon: (
       <path d="M11 5h2v14h-2V5zm-7 7h14v2H4v-2z" fill="currentColor" />

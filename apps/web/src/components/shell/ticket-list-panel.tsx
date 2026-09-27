@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useMemo, useState, useTransition } from "react";
 import { PriorityDot, SlaDot } from "@/components/badges";
 import { formatRelative } from "@/lib/format";
 import { currentAgent } from "@/lib/agents";
@@ -19,16 +19,10 @@ export function TicketListPanel({ initialTickets }: Props) {
   const filter = searchParams.get("filter");
   const qParam = searchParams.get("q") || "";
   const [query, setQuery] = useState(qParam);
-  const [tickets, setTickets] = useState(initialTickets);
+  const [searchResults, setSearchResults] = useState<TicketSummary[] | null>(null);
   const [pending, startTransition] = useTransition();
 
-  useEffect(() => {
-    setTickets(initialTickets);
-  }, [initialTickets]);
-
-  useEffect(() => {
-    setQuery(qParam);
-  }, [qParam]);
+  const tickets = qParam.trim() && searchResults ? searchResults : initialTickets;
 
   const activeId = pathname.startsWith("/tickets/")
     ? pathname.split("/")[2]
@@ -38,7 +32,8 @@ export function TicketListPanel({ initialTickets }: Props) {
     (value: string) => {
       startTransition(async () => {
         if (!value.trim()) {
-          router.replace(filter ? `/inbox?filter=${filter}` : "/inbox");
+          setSearchResults(null);
+          router.replace(filter ? `/tickets?filter=${filter}` : "/tickets");
           router.refresh();
           return;
         }
@@ -69,11 +64,11 @@ export function TicketListPanel({ initialTickets }: Props) {
             source: "manager" as const,
           }),
         );
-        setTickets(hits);
+        setSearchResults(hits);
         const params = new URLSearchParams();
         if (filter) params.set("filter", filter);
         params.set("q", value);
-        router.replace(`/inbox?${params.toString()}`);
+        router.replace(`/tickets?${params.toString()}`);
       });
     },
     [filter, router],
@@ -107,14 +102,22 @@ export function TicketListPanel({ initialTickets }: Props) {
     <aside className="hidden w-[340px] shrink-0 flex-col border-r border-border bg-base md:flex">
       <div className="border-b border-border px-4 py-3">
         <div className="flex items-center justify-between">
-          <h1 className="font-ui-semibold text-[15px] text-primary">Inbox</h1>
-          <span className="text-xs text-tertiary tabular-nums">
-            {pending ? "…" : list.length}
-          </span>
+          <div className="flex items-center gap-2">
+            <h1 className="font-ui-semibold text-[15px] text-primary">Тикеты</h1>
+            <span className="text-xs text-tertiary tabular-nums">
+              {pending ? "…" : list.length}
+            </span>
+          </div>
+          <Link
+            href="/tickets/new"
+            className="text-xs font-ui-medium text-accent hover:opacity-80"
+          >
+            Создать
+          </Link>
         </div>
         <div className="mt-3 flex gap-1">
           {filters.map((f) => {
-            const href = f.key ? `/inbox?filter=${f.key}` : "/inbox";
+            const href = f.key ? `/tickets?filter=${f.key}` : "/tickets";
             const active = (f.key === null && !filter) || filter === f.key;
             return (
               <Link
