@@ -31,6 +31,10 @@ function siteKey(script: HTMLScriptElement): string {
   return script.getAttribute("data-site-key") || "demo-site";
 }
 
+function title(script: HTMLScriptElement): string {
+  return script.getAttribute("data-title") || "Поддержка";
+}
+
 function css(): string {
   return `
 #hd-root{all:initial;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;--hd-primary:#2563eb;--hd-primary-foreground:#fff;--hd-panel:#0f1419;--hd-panel-muted:#121820;--hd-panel-header:#162033;--hd-panel-bubble:#1c2736;--hd-panel-border:#243041;--hd-input:#0c1118;--hd-input-border:#2a3a4f;--hd-text:#e8eef5;--hd-text-muted:#9fb0c3;--hd-text-action:#c9d6e5;--hd-error:#f87171}
@@ -49,6 +53,15 @@ function css(): string {
 .hd-bubble.bot,.hd-bubble.agent,.hd-bubble.system{align-self:flex-start;background:var(--hd-panel-bubble);color:var(--hd-text);border-bottom-left-radius:4px}
 .hd-bubble.system{opacity:.85;font-size:12px}
 .hd-meta{font-size:10px;opacity:.65;margin-bottom:4px;text-transform:capitalize}
+.hd-markdown p{margin:0 0 8px}
+.hd-markdown p:last-child{margin-bottom:0}
+.hd-markdown h1,.hd-markdown h2,.hd-markdown h3{margin:0 0 8px;font-size:1em;line-height:1.35}
+.hd-markdown ul,.hd-markdown ol{margin:0 0 8px;padding-left:18px}
+.hd-markdown li{margin:3px 0}
+.hd-markdown strong{font-weight:700}
+.hd-markdown em{font-style:italic}
+.hd-markdown code{padding:1px 4px;border-radius:4px;background:rgba(127,127,127,.16);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em}
+.hd-markdown a{color:inherit;text-decoration:underline;text-underline-offset:2px}
 #hd-foot{border-top:1px solid var(--hd-panel-border);padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--hd-panel-muted)}
 #hd-row{display:flex;gap:8px}
 #hd-input{flex:1;border:1px solid var(--hd-input-border);background:var(--hd-input);color:var(--hd-text);border-radius:10px;padding:10px 12px;font-size:13px;outline:none}
@@ -76,6 +89,113 @@ async function jsonFetch(
   return data;
 }
 
+function appendInlineMarkdown(target: HTMLElement, value: string) {
+  const token = /(\*\*([^*]+)\*\*|`([^`]+)`|\[([^\]]+)\]\(([^)\s]+)\)|\*([^*]+)\*)/g;
+  let index = 0;
+
+  for (const match of value.matchAll(token)) {
+    const start = match.index ?? 0;
+    if (start > index) target.append(document.createTextNode(value.slice(index, start)));
+
+    if (match[2]) {
+      const strong = document.createElement("strong");
+      strong.textContent = match[2];
+      target.append(strong);
+    } else if (match[3]) {
+      const code = document.createElement("code");
+      code.textContent = match[3];
+      target.append(code);
+    } else if (match[4] && match[5]) {
+      try {
+        const url = new URL(match[5], window.location.href);
+        if (url.protocol === "http:" || url.protocol === "https:") {
+          const link = document.createElement("a");
+          link.href = url.toString();
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.textContent = match[4];
+          target.append(link);
+        } else {
+          target.append(document.createTextNode(match[0]));
+        }
+      } catch {
+        target.append(document.createTextNode(match[0]));
+      }
+    } else if (match[6]) {
+      const emphasis = document.createElement("em");
+      emphasis.textContent = match[6];
+      target.append(emphasis);
+    }
+
+    index = start + match[0].length;
+  }
+
+  if (index < value.length) target.append(document.createTextNode(value.slice(index)));
+}
+
+function renderMarkdown(target: HTMLElement, source: string) {
+  const lines = source.replace(/\r\n?/g, "\n").split("\n");
+  let paragraph: string[] = [];
+  let list: HTMLUListElement | HTMLOListElement | undefined;
+  let listKind: "ul" | "ol" | undefined;
+
+  const flushParagraph = () => {
+    if (!paragraph.length) return;
+    const element = document.createElement("p");
+    paragraph.forEach((line, index) => {
+      if (index) element.append(document.createElement("br"));
+      appendInlineMarkdown(element, line);
+    });
+    target.append(element);
+    paragraph = [];
+  };
+
+  const closeList = () => {
+    list = undefined;
+    listKind = undefined;
+  };
+
+  for (const line of lines) {
+    const heading = /^(#{1,3})\s+(.+)$/.exec(line);
+    const unordered = /^\s*[-+*]\s+(.+)$/.exec(line);
+    const ordered = /^\s*\d+[.)]\s+(.+)$/.exec(line);
+
+    if (!line.trim()) {
+      flushParagraph();
+      closeList();
+      continue;
+    }
+
+    if (heading) {
+      flushParagraph();
+      closeList();
+      const element = document.createElement(`h${heading[1].length}`) as HTMLHeadingElement;
+      appendInlineMarkdown(element, heading[2]);
+      target.append(element);
+      continue;
+    }
+
+    if (unordered || ordered) {
+      flushParagraph();
+      const nextKind = unordered ? "ul" : "ol";
+      if (!list || listKind !== nextKind) {
+        list = document.createElement(nextKind);
+        listKind = nextKind;
+        target.append(list);
+      }
+      const item = document.createElement("li");
+      appendInlineMarkdown(item, (unordered ?? ordered)![1]);
+      list.append(item);
+      continue;
+    }
+
+    closeList();
+    paragraph.push(line);
+  }
+
+  flushParagraph();
+}
+
 function mount(script: HTMLScriptElement) {
   const base = apiBase(script);
   const key = siteKey(script);
@@ -90,7 +210,7 @@ function mount(script: HTMLScriptElement) {
     <button id="hd-fab" type="button" aria-label="Открыть чат поддержки">💬</button>
     <div id="hd-panel" role="dialog" aria-label="Чат поддержки">
       <div id="hd-head">
-        <h2>Поддержка</h2>
+        <h2 id="hd-title"></h2>
         <button type="button" id="hd-close" aria-label="Закрыть">×</button>
       </div>
       <div id="hd-msgs"></div>
@@ -114,6 +234,8 @@ function mount(script: HTMLScriptElement) {
   const humanBtn = root.querySelector("#hd-human") as HTMLButtonElement;
   const errEl = root.querySelector("#hd-err") as HTMLDivElement;
   const closeBtn = root.querySelector("#hd-close") as HTMLButtonElement;
+  const heading = root.querySelector("#hd-title") as HTMLHeadingElement;
+  heading.textContent = title(script);
 
   let visitorId = localStorage.getItem(STORAGE_VISITOR) || "";
   let conversationId = localStorage.getItem(STORAGE_CONV) || "";
@@ -135,7 +257,8 @@ function mount(script: HTMLScriptElement) {
       meta.className = "hd-meta";
       meta.textContent = m.role;
       const body = document.createElement("div");
-      body.textContent = m.body;
+      body.className = "hd-markdown";
+      renderMarkdown(body, m.body);
       wrap.appendChild(meta);
       wrap.appendChild(body);
       msgsEl.appendChild(wrap);
